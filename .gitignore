@@ -12,6 +12,9 @@ data/
 bin/
 !bin/.gitkeep
 
+# npm cache
+.npm-cache/
+
 # IDE
 .vscode/
 .idea/
