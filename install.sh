@@ -145,8 +145,8 @@ install_sockstoall() {
         cd "$install_dir"
     fi
     
-    # 安装依赖（强制包含 devDependencies，服务器可能设置了 production=true）
     log_info "安装 Node 依赖..."
+    npm config unset production 2>/dev/null || true
     npm install --include=dev
     
     # 构建

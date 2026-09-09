@@ -8,11 +8,16 @@ interface UseWebSocketOptions {
 }
 
 export function useWebSocket(options: UseWebSocketOptions = {}) {
-  const { onLog, onStatus, autoConnect = true } = options;
+  const { autoConnect = true } = options;
   const wsRef = useRef<WebSocket | null>(null);
+  const onLogRef = useRef(options.onLog);
+  const onStatusRef = useRef(options.onStatus);
   const [connected, setConnected] = useState(false);
   const [logs, setLogs] = useState<LogMessage[]>([]);
   const [status, setStatus] = useState<StatusMessage | null>(null);
+
+  onLogRef.current = options.onLog;
+  onStatusRef.current = options.onStatus;
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
@@ -33,10 +38,10 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
         
         if (message.type === 'log') {
           setLogs(prev => [...prev, message]);
-          onLog?.(message);
+          onLogRef.current?.(message);
         } else if (message.type === 'status') {
           setStatus(message);
-          onStatus?.(message);
+          onStatusRef.current?.(message);
         }
       } catch (error) {
         console.error('WebSocket message parse error:', error);
@@ -45,14 +50,13 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
     ws.onclose = () => {
       setConnected(false);
-      // 自动重连
       setTimeout(connect, 3000);
     };
 
     ws.onerror = (error) => {
       console.error('WebSocket error:', error);
     };
-  }, [onLog, onStatus]);
+  }, []);
 
   const disconnect = useCallback(() => {
     if (wsRef.current) {

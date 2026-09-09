@@ -54,15 +54,6 @@ function generateRandomPort(): number {
   return Math.floor(Math.random() * (65000 - 30000 + 1)) + 30000;
 }
 
-// 生成 x25519 密钥对（简化版，实际应该调用 xray 命令）
-function generateX25519KeyPair(): { privateKey: string; publicKey: string } {
-  // 这里用随机字符串模拟，实际应该调用 xray x25519 命令
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-  const key = Array.from({ length: 43 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-  return { privateKey: key, publicKey: key };
-}
-
-// 生成随机 Short ID（16 位十六进制）
 function generateShortId(): string {
   return Array.from({ length: 16 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
 }
@@ -145,21 +136,14 @@ export default function Nodes() {
         values.config.uuid = generateUUID();
       }
       
-      // Reality 配置自动生成
       if (values.config?.tls === 'reality') {
         if (!values.config.realitySettings) values.config.realitySettings = {};
-        if (!values.config.realitySettings.privateKey) {
-          const keys = generateX25519KeyPair();
-          values.config.realitySettings.privateKey = keys.privateKey;
-          values.config.realitySettings.publicKey = keys.publicKey;
-        }
         if (!values.config.realitySettings.shortId) {
           values.config.realitySettings.shortId = generateShortId();
         }
         if (!values.config.realitySettings.spiderX) {
           values.config.realitySettings.spiderX = '/';
         }
-        // serverNames 处理
         if (values.config.realitySettings.serverNames && typeof values.config.realitySettings.serverNames === 'string') {
           values.config.realitySettings.serverNames = values.config.realitySettings.serverNames.split(',').map((s: string) => s.trim());
         }

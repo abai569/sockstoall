@@ -2,7 +2,7 @@
  * 分享链接生成器
  */
 
-import type { Node } from '../../shared/types';
+import type { Node } from '../../shared/types.js';
 
 /**
  * 生成 Shadowsocks 分享链接

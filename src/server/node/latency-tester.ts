@@ -1,32 +1,17 @@
-/**
- * 节点延迟测试工具
- */
+import net from 'net';
 
-import { spawn } from 'child_process';
-import { join } from 'path';
-
-const ROOT_DIR = process.cwd();
-const BIN_DIR = join(ROOT_DIR, 'bin');
-
-/**
- * 测试节点延迟（ping）
- * 通过连接节点端口测试延迟
- */
 export async function testNodeLatency(node: any): Promise<{ success: boolean; latency?: number; error?: string }> {
   const host = node.listen || '127.0.0.1';
   const port = node.port;
   
   return new Promise((resolve) => {
     const startTime = Date.now();
-    
-    // 使用 TCP 连接测试
-    const net = require('net');
     const socket = new net.Socket();
     
     const timeout = setTimeout(() => {
       socket.destroy();
-      resolve({ success: false, error: '连接超时' });
-    }, 5000); // 5 秒超时
+      resolve({ success: false, error: 'Connection timeout' });
+    }, 5000);
     
     socket.connect(port, host, () => {
       clearTimeout(timeout);
@@ -42,9 +27,6 @@ export async function testNodeLatency(node: any): Promise<{ success: boolean; la
   });
 }
 
-/**
- * 批量测试所有节点延迟
- */
 export async function testAllNodesLatency(nodes: any[]): Promise<Map<string, number>> {
   const results = new Map<string, number>();
   

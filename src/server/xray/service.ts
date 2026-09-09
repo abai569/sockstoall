@@ -83,18 +83,17 @@ export class XrayService extends EventEmitter {
     }
   }
 
-  /**
-   * 写入配置文件
-   */
   private writeConfig(): void {
     const inbounds = this.nodes.map(node => this.buildInbound(node));
 
     const outbounds: any[] = [];
+    const routingRules: any[] = [];
     
     this.routes.forEach((route) => {
+      const socksTag = `socks-${route.routeId}`;
       outbounds.push({
         protocol: 'socks',
-        tag: `socks-${route.routeId}`,
+        tag: socksTag,
         settings: {
           servers: [{
             address: route.outbound.address,
@@ -107,6 +106,11 @@ export class XrayService extends EventEmitter {
           }],
         },
       });
+      routingRules.push({
+        type: 'field',
+        inboundTag: route.node.name,
+        outboundTag: socksTag,
+      });
     });
 
     outbounds.push({
@@ -114,11 +118,18 @@ export class XrayService extends EventEmitter {
       tag: 'direct',
     });
 
-    const config = {
+    const config: any = {
       log: { loglevel: 'info' },
       inbounds,
       outbounds,
     };
+
+    if (routingRules.length > 0) {
+      config.routing = {
+        domainStrategy: 'IPIfNonMatch',
+        rules: routingRules,
+      };
+    }
 
     if (!existsSync(DATA_DIR)) {
       mkdirSync(DATA_DIR, { recursive: true });
@@ -300,62 +311,67 @@ export class XrayService extends EventEmitter {
     }
   }
 
-  /**
-   * 重启 Xray（配置变更后调用）
-   */
   private restart(): void {
     if (!this.isRunning()) {
       return;
     }
 
-    // 先停止
-    this.process!.kill();
-    this.process = null;
+    const oldProcess = this.process!;
 
-    // 等待进程退出后重新启动
-    setTimeout(() => {
-      if (this.isInstalled()) {
-        try {
-          this.process = spawn(this.xrayPath!, ['run', '-c', CONFIG_FILE], {
-            cwd: ROOT_DIR,
-            stdio: ['ignore', 'pipe', 'pipe'],
-          });
+    const doStart = () => {
+      if (!this.isInstalled()) return;
+      try {
+        this.process = spawn(this.xrayPath!, ['run', '-c', CONFIG_FILE], {
+          cwd: ROOT_DIR,
+          stdio: ['ignore', 'pipe', 'pipe'],
+        });
 
-          this.startTime = Date.now();
-          let stderrBuffer = '';
+        this.startTime = Date.now();
+        let stderrBuffer = '';
 
-          this.process.stdout?.on('data', (data) => {
-            const msg = data.toString();
-            console.log('[Xray]', msg.trim());
-            this.emit('log', { level: 'info', message: msg });
-          });
+        this.process.stdout?.on('data', (data) => {
+          const msg = data.toString();
+          console.log('[Xray]', msg.trim());
+          this.emit('log', { level: 'info', message: msg });
+        });
 
-          this.process.stderr?.on('data', (data) => {
-            const msg = data.toString();
-            stderrBuffer += msg;
-            console.error('[Xray ERROR]', msg.trim());
-            this.emit('log', { level: 'error', message: msg });
-          });
+        this.process.stderr?.on('data', (data) => {
+          const msg = data.toString();
+          stderrBuffer += msg;
+          console.error('[Xray ERROR]', msg.trim());
+          this.emit('log', { level: 'error', message: msg });
+        });
 
-          this.process.on('exit', (code) => {
-            console.log(`[Xray] Process exited with code ${code}`);
-            if (code !== 0 && code !== null) {
-              console.error('[Xray] Exit stderr:', stderrBuffer);
-            }
-            this.emit('exit', { code });
-            this.process = null;
-          });
+        this.process.on('exit', (code) => {
+          console.log(`[Xray] Process exited with code ${code}`);
+          if (code !== 0 && code !== null) {
+            console.error('[Xray] Exit stderr:', stderrBuffer);
+          }
+          this.emit('exit', { code });
+          this.process = null;
+        });
 
-          this.process.on('error', (err) => {
-            console.error('[Xray] Process error:', err.message);
-            this.emit('error', { message: err.message });
-            this.process = null;
-          });
-        } catch (error) {
-          this.emit('error', { message: `Restart failed: ${error}` });
-        }
+        this.process.on('error', (err) => {
+          console.error('[Xray] Process error:', err.message);
+          this.emit('error', { message: err.message });
+          this.process = null;
+        });
+      } catch (error) {
+        this.emit('error', { message: `Restart failed: ${error}` });
       }
-    }, 500);
+    };
+
+    oldProcess.once('exit', () => {
+      doStart();
+    });
+
+    oldProcess.kill();
+
+    setTimeout(() => {
+      if (!this.isRunning()) {
+        doStart();
+      }
+    }, 3000);
   }
 }
 

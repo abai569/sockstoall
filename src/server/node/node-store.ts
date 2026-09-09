@@ -80,6 +80,7 @@ export function updateNode(id: string, data: Partial<CreateNodeRequest>): Node |
   const updated = {
     ...nodes[index],
     ...data,
+    ...(data.config ? { config: { ...nodes[index].config, ...data.config } } : {}),
     updatedAt: new Date().toISOString(),
   } as Node;
   

@@ -10,6 +10,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 import { authRoutes } from './auth/routes.js';
+import { authProtectedRoutes } from './auth/auth-protected-routes.js';
 import { authMiddleware } from './auth/middleware.js';
 import { nodeRoutes } from './node/routes.js';
 import { linkRoutes } from './node/link-routes.js';
@@ -17,9 +18,8 @@ import { routeRoutes } from './route/routes.js';
 import { xrayRoutes } from './xray/routes.js';
 import { initWebSocket } from './xray/ws-log.js';
 import { xrayService } from './xray/service.js';
-import { getNodes } from './node/node-store.js';
+import { getNodes, getNodeById } from './node/node-store.js';
 import { getRoutes } from './route/route-store.js';
-import { getNodeById } from './node/node-store.js';
 
 const app = new Hono();
 const PORT = parseInt(process.env.PORT || '3456');
@@ -33,10 +33,11 @@ app.onError((err, c) => {
 // CORS for API
 app.use('/api/*', cors());
 
-// 公开路由 (登录)
 app.route('/api/auth', authRoutes);
 
-// 受保护路由
+app.use('/api/auth/*', authMiddleware);
+app.route('/api/auth', authProtectedRoutes);
+
 app.use('/api/link/*', authMiddleware);
 app.use('/api/nodes/*', authMiddleware);
 app.use('/api/routes/*', authMiddleware);

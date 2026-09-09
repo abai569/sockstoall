@@ -18,8 +18,6 @@ export default function Dashboard() {
   const [actionLoading, setActionLoading] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => { loadData(); }, []);
-
   const loadData = async () => {
     setLoading(true);
     try {
@@ -37,6 +35,8 @@ export default function Dashboard() {
       setLoading(false);
     }
   };
+
+  useEffect(() => { loadData(); }, []);
 
   const handleXrayAction = async (action: 'start' | 'stop') => {
     setActionLoading(true);
@@ -143,8 +143,8 @@ export default function Dashboard() {
       
       <Card title="快捷操作" style={{ marginTop: 24 }}>
         <Space wrap>
-          <Tag color="blue" style={{ cursor: 'pointer', padding: '8px 16px' }} onClick={() => navigate('/nodes/new')}>创建节点</Tag>
-          <Tag color="purple" style={{ cursor: 'pointer', padding: '8px 16px' }} onClick={() => navigate('/routes/new')}>创建规则</Tag>
+          <Tag color="blue" style={{ cursor: 'pointer', padding: '8px 16px' }} onClick={() => navigate('/nodes')}>创建节点</Tag>
+          <Tag color="purple" style={{ cursor: 'pointer', padding: '8px 16px' }} onClick={() => navigate('/routes')}>创建规则</Tag>
           <Tag color="cyan" style={{ cursor: 'pointer', padding: '8px 16px' }} onClick={() => navigate('/logs')}>查看日志</Tag>
         </Space>
       </Card>

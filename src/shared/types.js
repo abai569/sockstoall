@@ -1,4 +1,0 @@
-/**
- * SocksToAll 共享类型定义
- */
-export {};

@@ -119,7 +119,10 @@ async function main() {
   
   // 2. 安装 Node 依赖
   console.log('\n[2/5] Installing Node.js dependencies...');
-  execSync('npm install', { cwd: ROOT, stdio: 'inherit' });
+  const unsetCmd = process.platform === 'win32'
+    ? 'npm config unset production 2>nul || ver >nul'
+    : 'npm config unset production 2>/dev/null || true';
+  execSync(`${unsetCmd} && npm install`, { cwd: ROOT, stdio: 'inherit', shell: true });
   
   // 3. 下载 Xray-core
   console.log('\n[3/5] Downloading Xray-core...');
