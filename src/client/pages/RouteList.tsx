@@ -65,6 +65,7 @@ export default function RouteList() {
 
   const openCreate = () => {
     setEditId(null);
+    setLinkValue('');
     form.resetFields();
     form.setFieldsValue({ enabled: true });
     setModalOpen(true);
@@ -72,6 +73,7 @@ export default function RouteList() {
 
   const openEdit = (record: Route) => {
     setEditId(record.id);
+    setLinkValue('');
     form.setFieldsValue(record);
     setModalOpen(true);
   };
@@ -166,7 +168,10 @@ export default function RouteList() {
         title={editId ? '编辑规则' : '创建规则'}
         open={modalOpen}
         onOk={handleSubmit}
-        onCancel={() => setModalOpen(false)}
+        onCancel={() => {
+          setModalOpen(false);
+          setLinkValue('');
+        }}
         confirmLoading={submitting}
         width={500}
         okText={editId ? '保存' : '创建'}
