@@ -1,159 +1,176 @@
 #!/bin/bash
 
-# SocksToAll 一键安装脚本
-# 支持 Ubuntu/Debian/CentOS
-
 set -e
 
-# 颜色定义
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-# 日志函数
 log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-# 检测系统
+INSTALL_DIR="/opt/sockstoall"
+REPO="abai569/sockstoall"
+
+if [ "$EUID" -ne 0 ]; then
+    log_error "Please run as root"
+    exit 1
+fi
+
 detect_os() {
     if [ -f /etc/os-release ]; then
         . /etc/os-release
         OS=$ID
-        VER=$VERSION_ID
-    elif type lsb_release >/dev/null 2>&1; then
-        OS=$(lsb_release -si | tr '[:upper:]' '[:lower:]')
-        VER=$(lsb_release -sr)
-    elif [ -f /etc/centos-release ]; then
-        OS="centos"
-        VER=$(cat /etc/centos-release | grep -oP '[0-9]+' | head -1)
     else
         OS="unknown"
-        VER="unknown"
     fi
-    log_info "检测到系统: $OS $VER"
+    log_info "OS: $OS"
 }
 
-# 安装依赖
-install_deps() {
-    log_info "安装依赖..."
-    
+install_base_deps() {
+    log_info "Installing base dependencies..."
     case $OS in
         ubuntu|debian)
-            apt-get update -y
-            apt-get install -y curl wget unzip git
+            apt-get update -y && apt-get install -y curl wget unzip git
             ;;
-        centos|rhel|fedora)
-            if [ "$VER" -ge 8 ] 2>/dev/null; then
-                dnf install -y curl wget unzip git
-            else
-                yum install -y curl wget unzip git
-            fi
+        centos|rhel|fedora|almalinux|rocky)
+            dnf install -y curl wget unzip git 2>/dev/null || yum install -y curl wget unzip git
             ;;
         *)
-            log_error "不支持的系统: $OS"
-            exit 1
+            apt-get update -y && apt-get install -y curl wget unzip git
             ;;
     esac
-    
-    log_info "依赖安装完成"
 }
 
-# 安装 Node.js
 install_nodejs() {
-    local node_version=$(node -v 2>/dev/null | grep -oP '[0-9]+' | head -1)
-    
-    if [ -z "$node_version" ] || [ "$node_version" -lt 18 ]; then
-        log_info "安装 Node.js 20..."
-        
-        case $OS in
-            ubuntu|debian)
-                curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-                apt-get install -y nodejs
-                ;;
-            centos|rhel|fedora)
-                curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
-                yum install -y nodejs
-                ;;
-        esac
-        
-        log_info "Node.js 安装完成: $(node -v)"
-    else
-        log_info "Node.js 版本已满足: $(node -v)"
-    fi
-}
-
-# 下载 Xray
-install_xray() {
-    log_info "下载 Xray..."
-    
-    local bin_dir="/opt/sockstoall/bin"
-    mkdir -p "$bin_dir"
-    
-    # 检测架构
-    local arch=$(uname -m)
-    case $arch in
-        x86_64) arch="64" ;;
-        aarch64) arch="arm64-v8a" ;;
-        armv7l) arch="arm32-v7a" ;;
-        *) arch="64" ;;
-    esac
-    
-    # 下载最新 Xray
-    local xray_url="https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-${arch}.zip"
-    local tmp_dir=$(mktemp -d)
-    
-    wget -q -O "$tmp_dir/xray.zip" "$xray_url" || {
-        log_error "下载 Xray 失败"
-        exit 1
-    }
-    
-    unzip -q "$tmp_dir/xray.zip" -d "$tmp_dir"
-    mv "$tmp_dir/xray" "$bin_dir/xray"
-    chmod +x "$bin_dir/xray"
-    
-    rm -rf "$tmp_dir"
-    
-    log_info "Xray 安装完成: $($bin_dir/xray -version | head -1)"
-}
-
-# 安装 SocksToAll
-install_sockstoall() {
-    log_info "安装 SocksToAll..."
-    
-    local install_dir="/opt/sockstoall"
-    
-    # 下载源码
-    if [ -d "$install_dir" ]; then
-        if [ -d "$install_dir/.git" ]; then
-            log_warn "目录已存在，更新中..."
-            cd "$install_dir"
-            git pull || {
-                log_error "Git pull 失败"
-                exit 1
-            }
-        else
-            log_warn "旧目录非 git 仓库，重新安装..."
-            rm -rf "$install_dir"
-            git clone https://github.com/abai569/sockstoall.git "$install_dir"
-            cd "$install_dir"
+    if command -v node &>/dev/null; then
+        local ver=$(node -v | grep -oP '[0-9]+' | head -1)
+        if [ "$ver" -ge 18 ]; then
+            log_info "Node.js $(node -v) already installed"
+            return
         fi
-    else
-        git clone https://github.com/abai569/sockstoall.git "$install_dir"
-        cd "$install_dir"
     fi
-    
-    log_info "安装 Node 依赖..."
+    log_info "Installing Node.js 20..."
+    case $OS in
+        ubuntu|debian)
+            curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+            apt-get install -y nodejs
+            ;;
+        *)
+            curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
+            yum install -y nodejs 2>/dev/null || dnf install -y nodejs
+            ;;
+    esac
+    log_info "Node.js $(node -v) installed"
+}
+
+get_ipv4() {
+    local urls=(
+        "https://api4.ipify.org"
+        "https://ipv4.icanhazip.com"
+        "https://v4.ident.me"
+        "https://4.ifconfig.me"
+    )
+    for url in "${urls[@]}"; do
+        local ip=$(curl -fsSL --max-time 5 "$url" 2>/dev/null | tr -d '[:space:]')
+        if [[ "$ip" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "$ip"
+            return 0
+        fi
+    done
+    return 1
+}
+
+install_xray() {
+    local bin_dir="$INSTALL_DIR/bin"
+    mkdir -p "$bin_dir"
+
+    if [ -f "$bin_dir/xray" ]; then
+        log_info "Xray already exists: $($bin_dir/xray version 2>/dev/null | head -1)"
+        return
+    fi
+
+    log_info "Downloading Xray..."
+    local arch
+    case $(uname -m) in
+        x86_64)  arch="64" ;;
+        aarch64) arch="arm64-v8a" ;;
+        armv7l)  arch="arm32-v7a" ;;
+        *)       arch="64" ;;
+    esac
+
+    local url="https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-${arch}.zip"
+    local tmp=$(mktemp -d)
+
+    wget -q -O "$tmp/xray.zip" "$url" || { log_error "Download Xray failed"; exit 1; }
+    unzip -q -o "$tmp/xray.zip" -d "$tmp"
+    mv "$tmp/xray" "$bin_dir/xray"
+    chmod +x "$bin_dir/xray"
+    rm -rf "$tmp"
+
+    log_info "Xray installed: $($bin_dir/xray version 2>/dev/null | head -1)"
+}
+
+download_release() {
+    log_info "Fetching latest release..."
+    local tag
+    tag=$(curl -fsSL --max-time 10 "https://api.github.com/repos/${REPO}/releases/latest" 2>/dev/null | grep '"tag_name"' | head -1 | sed 's/.*: *"//;s/".*//')
+
+    if [ -z "$tag" ]; then
+        log_warn "No release found, will build from source"
+        return 1
+    fi
+
+    local url="https://github.com/${REPO}/releases/download/${tag}/sockstoall-${tag}.tar.gz"
+    log_info "Downloading release ${tag}..."
+
+    local tmp=$(mktemp -d)
+    if ! wget -q -O "$tmp/sockstoall.tar.gz" "$url"; then
+        log_warn "Release download failed, will build from source"
+        rm -rf "$tmp"
+        return 1
+    fi
+
+    log_info "Extracting release..."
+    mkdir -p "$INSTALL_DIR"
+    tar -xzf "$tmp/sockstoall.tar.gz" -C "$INSTALL_DIR"
+    rm -rf "$tmp"
+
+    log_info "Release ${tag} installed"
+    return 0
+}
+
+build_from_source() {
+    log_info "Building from source (this may take a few minutes)..."
+
+    if [ -d "$INSTALL_DIR/.git" ]; then
+        cd "$INSTALL_DIR"
+        git pull
+    else
+        rm -rf "$INSTALL_DIR"
+        git clone "https://github.com/${REPO}.git" "$INSTALL_DIR"
+        cd "$INSTALL_DIR"
+    fi
+
     npm config unset production 2>/dev/null || true
     npm install --include=dev
-    
-    log_info "构建前端..."
+
     export NODE_OPTIONS="--max-old-space-size=1024"
-    npm run build
-    
-    # 创建 systemd 服务
+    npm run build:release
+}
+
+init_data() {
+    local data_dir="$INSTALL_DIR/data"
+    mkdir -p "$data_dir"
+    [ ! -f "$data_dir/nodes.json" ] && echo "[]" > "$data_dir/nodes.json"
+    [ ! -f "$data_dir/routes.json" ] && echo "[]" > "$data_dir/routes.json"
+    log_info "Data directory initialized"
+}
+
+setup_systemd() {
     cat > /etc/systemd/system/sockstoall.service << 'EOF'
 [Unit]
 Description=SocksToAll Proxy Manager
@@ -163,7 +180,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=/opt/sockstoall
-ExecStart=/usr/bin/node dist/server/server/index.js
+ExecStart=/usr/bin/node /opt/sockstoall/dist/server.mjs
 Restart=always
 RestartSec=10
 Environment=NODE_ENV=production
@@ -172,69 +189,52 @@ Environment=PORT=3456
 [Install]
 WantedBy=multi-user.target
 EOF
-    
+
     systemctl daemon-reload
     systemctl enable sockstoall
-    
-    log_info "SocksToAll 安装完成"
 }
 
-# 启动服务
 start_service() {
-    log_info "启动服务..."
-    systemctl start sockstoall
+    log_info "Starting service..."
+    systemctl restart sockstoall
+    sleep 2
     systemctl status sockstoall --no-pager
 }
 
-# 获取服务器 IP
-get_server_ip() {
-    local ip=$(curl -s ifconfig.me 2>/dev/null || curl -s icanhazip.com 2>/dev/null || echo "localhost")
-    echo "$ip"
-}
-
-# 主函数
 main() {
     echo -e "${BLUE}"
-    echo "═══════════════════════════════════════════════════════════╗"
-    echo "║                                                           ║"
-    echo "║   SocksToAll 一键安装脚本                                 ║"
-    echo "║                                                           ║"
-    echo "║   GitHub: https://github.com/abai569/sockstoall           ║"
-    echo "║                                                           ║"
-    echo "╚═══════════════════════════════════════════════════════════╝"
+    echo "==========================================================="
+    echo "   SocksToAll Installer"
+    echo "   https://github.com/${REPO}"
+    echo "==========================================================="
     echo -e "${NC}"
-    
-    # 检查 root
-    if [ "$EUID" -ne 0 ]; then
-        log_error "请使用 root 用户运行此脚本"
-        exit 1
-    fi
-    
+
     detect_os
-    install_deps
+    install_base_deps
     install_nodejs
+
+    if ! download_release; then
+        build_from_source
+    fi
+
     install_xray
-    install_sockstoall
+    init_data
+    setup_systemd
     start_service
-    
-    local ip=$(get_server_ip)
-    
+
+    local ip=$(get_ipv4 || echo "localhost")
     echo ""
-    echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
-    echo -e "${GREEN}  安装完成！${NC}"
-    echo -e "${GREEN}═══════════════════════════════════════════════════════════${NC}"
+    echo -e "${GREEN}===========================================================${NC}"
+    echo -e "${GREEN}  Installation Complete!${NC}"
+    echo -e "${GREEN}===========================================================${NC}"
     echo ""
-    echo -e "  访问地址: ${BLUE}http://${ip}:3456${NC}"
-    echo -e "  默认账号: ${YELLOW}admin${NC}"
-    echo -e "  默认密码: ${YELLOW}admin123${NC}"
+    echo -e "  URL:    ${BLUE}http://${ip}:3456${NC}"
+    echo -e "  User:   ${YELLOW}admin${NC}"
+    echo -e "  Pass:   ${YELLOW}admin123${NC}"
     echo ""
-    echo -e "  管理命令:"
-    echo -e "    启动: ${BLUE}systemctl start sockstoall${NC}"
-    echo -e "    停止: ${BLUE}systemctl stop sockstoall${NC}"
-    echo -e "    重启: ${BLUE}systemctl restart sockstoall${NC}"
-    echo -e "    日志: ${BLUE}journalctl -u sockstoall -f${NC}"
-    echo ""
-    echo -e "  ⚠️  ${YELLOW}请立即修改默认密码！${NC}"
+    echo -e "  Commands:"
+    echo -e "    systemctl start|stop|restart sockstoall"
+    echo -e "    journalctl -u sockstoall -f"
     echo ""
 }
 

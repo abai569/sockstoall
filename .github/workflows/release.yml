@@ -1,0 +1,32 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+      - run: npm run build:release
+
+      - run: |
+          mkdir -p release
+          cp -r dist release/
+          cp package.json release/
+          tar -czf sockstoall-${{ github.ref_name }}.tar.gz -C release .
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: sockstoall-${{ github.ref_name }}.tar.gz
