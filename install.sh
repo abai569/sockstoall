@@ -145,13 +145,16 @@ install_sockstoall() {
         cd "$install_dir"
     fi
     
-    # 安装依赖
+    # 安装依赖（需要 devDependencies 来构建）
     log_info "安装 Node 依赖..."
-    npm install --production
+    npm install
     
     # 构建
     log_info "构建前端..."
     npm run build
+    
+    # 安装生产依赖，删除开发依赖
+    npm prune --production
     
     # 创建 systemd 服务
     cat > /etc/systemd/system/sockstoall.service << 'EOF'
