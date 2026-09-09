@@ -15,15 +15,22 @@ export const routeRoutes = new Hono();
 
 // 重新加载 Xray 配置（只包含启用的节点和规则）
 function reloadXray() {
-  const nodes = getNodes().filter(n => n.enabled);
-  const routes = getRoutes().filter(r => r.enabled);
-  const routeDetails = routes
-    .map(r => {
-      const node = getNodeById(r.nodeId);
-      return node ? { routeId: r.id, node, outbound: r.outbound } : null;
-    })
-    .filter(Boolean) as any[];
-  xrayService.setNodesAndRoutes(nodes, routeDetails);
+  setTimeout(() => {
+    try {
+      const nodes = getNodes().filter(n => n.enabled);
+      const routes = getRoutes().filter(r => r.enabled);
+      const routeDetails = routes
+        .map(r => {
+          const node = getNodeById(r.nodeId);
+          return node ? { routeId: r.id, node, outbound: r.outbound } : null;
+        })
+        .filter(Boolean) as any[];
+      xrayService.setNodesAndRoutes(nodes, routeDetails);
+      console.log('Xray config reloaded');
+    } catch (error) {
+      console.error('Failed to reload Xray config:', error);
+    }
+  }, 0);
 }
 
 // 获取所有规则

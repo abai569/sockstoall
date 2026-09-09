@@ -87,14 +87,16 @@ export default function Nodes() {
 
   const openCreate = () => {
     setEditId(null);
-    setProtocol('shadowsocks');
+    setProtocol('vless');
     setTlsType('none');
     setTransport('tcp');
     form.resetFields();
     form.setFieldsValue({ 
-      protocol: 'shadowsocks', 
+      protocol: 'vless',
+      port: generateRandomPort(),
       listen: '0.0.0.0', 
       config: { 
+        uuid: generateUUID(),
         tls: 'none', 
         transport: 'tcp',
         flow: 'none',

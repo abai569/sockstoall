@@ -43,6 +43,7 @@ export function createRoute(data: CreateRouteRequest): Route {
   
   const newRoute: Route = {
     ...data,
+    enabled: data.enabled !== false,
     id: randomUUID(),
     createdAt: now,
     updatedAt: now,
