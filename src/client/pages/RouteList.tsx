@@ -93,10 +93,12 @@ export default function RouteList() {
     if (parsed) {
       console.log('Parsed SOCKS5 link:', parsed);
       form.setFieldsValue({
-        'outbound.address': parsed.address,
-        'outbound.port': parsed.port,
-        'outbound.username': parsed.username || undefined,
-        'outbound.password': parsed.password || undefined,
+        outbound: {
+          address: parsed.address,
+          port: parsed.port,
+          username: parsed.username || undefined,
+          password: parsed.password || undefined,
+        },
       });
     }
   };
@@ -188,7 +190,7 @@ export default function RouteList() {
 
           <div style={{ background: '#fafafa', padding: '12px 16px', borderRadius: 6, marginBottom: 16 }}>
             <div style={{ fontWeight: 500, marginBottom: 12 }}>出站 SOCKS5 配置</div>
-            <Form.Item label="粘贴 SOCKS5 链接">
+            <Form.Item>
               <Input
                 placeholder="粘贴链接，如 socks5://user:pass@1.2.3.4:1080 或 1.2.3.4:1080:user:pass"
                 prefix={<LinkOutlined />}
