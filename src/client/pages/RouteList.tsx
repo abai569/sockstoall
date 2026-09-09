@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Table, Button, Space, Tag, Popconfirm, Switch, message, Typography, Modal, Form, Input, InputNumber, Select } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, LinkOutlined } from '@ant-design/icons';
 import { routeApi, nodeApi } from '../api/client';
@@ -12,13 +12,20 @@ function parseSocks5Link(str: string): { address: string; port: number; username
 
   try {
     if (trimmed.startsWith('socks5://')) {
-      const url = new URL(trimmed);
-      const address = url.hostname;
-      const port = parseInt(url.port);
+      const withoutProtocol = trimmed.slice(8);
+      const atIndex = withoutProtocol.lastIndexOf('@');
+      if (atIndex <= 0) return null;
+      const auth = withoutProtocol.slice(0, atIndex);
+      const hostPort = withoutProtocol.slice(atIndex + 1);
+      const colonIndex = hostPort.lastIndexOf(':');
+      if (colonIndex <= 0) return null;
+      const address = hostPort.slice(0, colonIndex);
+      const port = parseInt(hostPort.slice(colonIndex + 1));
       if (!address || !port) return null;
-      const username = url.username || undefined;
-      const password = url.password || undefined;
-      return { address, port, username, password };
+      const colonInAuth = auth.indexOf(':');
+      const username = colonInAuth >= 0 ? auth.slice(0, colonInAuth) : auth;
+      const password = colonInAuth >= 0 ? auth.slice(colonInAuth + 1) : undefined;
+      return { address, port, username: username || undefined, password: password || undefined };
     }
 
     const parts = trimmed.split(':');
@@ -84,6 +91,7 @@ export default function RouteList() {
     setLinkValue(val);
     const parsed = parseSocks5Link(val);
     if (parsed) {
+      console.log('Parsed SOCKS5 link:', parsed);
       form.setFieldsValue({
         'outbound.address': parsed.address,
         'outbound.port': parsed.port,
