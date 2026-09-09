@@ -149,8 +149,8 @@ install_sockstoall() {
     npm config unset production 2>/dev/null || true
     npm install --include=dev
     
-    # 构建
     log_info "构建前端..."
+    export NODE_OPTIONS="--max-old-space-size=1024"
     npm run build
     
     # 创建 systemd 服务

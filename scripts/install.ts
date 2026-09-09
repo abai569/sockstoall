@@ -166,7 +166,7 @@ async function main() {
   
   // 5. 构建前端
   console.log('\n[5/5] Building frontend...');
-  execSync('npm run build', { cwd: ROOT, stdio: 'inherit' });
+  execSync('npm run build', { cwd: ROOT, stdio: 'inherit', env: { ...process.env, NODE_OPTIONS: '--max-old-space-size=1024' } });
   
   console.log('\n=== Installation Complete ===');
   console.log('\nStart the server:');
