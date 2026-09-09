@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Space, Tag, Popconfirm, Switch, message, Typography, Modal, Form, Input, InputNumber, Select } from 'antd';
+import { Table, Button, Space, Tag, Popconfirm, Switch, message, Typography, Modal, Form, Input, InputNumber, Select, Row, Col } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, LinkOutlined } from '@ant-design/icons';
 import { routeApi, nodeApi } from '../api/client';
 import type { Route, Node } from '../../shared/types';
@@ -136,6 +136,7 @@ export default function RouteList() {
       },
     },
     { title: '出站 SOCKS', key: 'outbound', render: (_: any, r: Route) => <span>{r.outbound.address}:{r.outbound.port}</span> },
+    { title: '备注', dataIndex: 'remark', key: 'remark', ellipsis: true, render: (remark: string) => remark || '-' },
     {
       title: '状态', dataIndex: 'enabled', key: 'enabled',
       render: (enabled: boolean, r: Route) => (
@@ -177,21 +178,24 @@ export default function RouteList() {
         okText={editId ? '保存' : '创建'}
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item name="name" label="规则名称" rules={[{ required: true, message: '请输入规则名称' }]}>
-            <Input placeholder="例如：我的转发规则" />
-          </Form.Item>
-          <Form.Item name="nodeId" label="入站节点" rules={[{ required: true, message: '请选择入站节点' }]}>
-            <Select placeholder="选择本地节点" showSearch optionFilterProp="label" loading={nodeLoading}>
-              {nodes.map(node => (
-                <Select.Option key={node.id} value={node.id} label={node.name}>
-                  <Space>
-                    <span>{node.name}</span>
-                    <span style={{ color: '#888' }}>({node.protocol}:{node.port})</span>
-                  </Space>
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="name" label="规则名称" rules={[{ required: true, message: '请输入规则名称' }]}>
+                <Input placeholder="例如：我的转发规则" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="nodeId" label="入站节点" rules={[{ required: true, message: '请选择入站节点' }]}>
+                <Select placeholder="选择本地节点" showSearch optionFilterProp="label" loading={nodeLoading}>
+                  {nodes.map(node => (
+                    <Select.Option key={node.id} value={node.id} label={node.name}>
+                      <Space><span>{node.name}</span><span style={{ color: '#888' }}>({node.protocol}:{node.port})</span></Space>
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
 
           <div style={{ background: '#fafafa', padding: '12px 16px', borderRadius: 6, marginBottom: 16 }}>
             <div style={{ fontWeight: 500, marginBottom: 12 }}>出站 SOCKS5 配置</div>
@@ -204,18 +208,12 @@ export default function RouteList() {
                 allowClear
               />
             </Form.Item>
-            <Form.Item name={['outbound', 'address']} label="服务器地址" rules={[{ required: true, message: '请输入地址' }]}>
-              <Input placeholder="例如：1.2.3.4" />
-            </Form.Item>
-            <Form.Item name={['outbound', 'port']} label="端口" rules={[{ required: true, message: '请输入端口' }]}>
-              <InputNumber min={1} max={65535} style={{ width: '100%' }} />
-            </Form.Item>
-            <Form.Item name={['outbound', 'username']} label="用户名">
-              <Input placeholder="可选" autoComplete="new-username" />
-            </Form.Item>
-            <Form.Item name={['outbound', 'password']} label="密码">
-              <Input.Password placeholder="可选" autoComplete="new-password" />
-            </Form.Item>
+            <Row gutter={16}>
+              <Col span={12}><Form.Item name={['outbound', 'address']} label="服务器地址" rules={[{ required: true, message: '请输入地址' }]}><Input placeholder="例如：1.2.3.4" /></Form.Item></Col>
+              <Col span={12}><Form.Item name={['outbound', 'port']} label="端口" rules={[{ required: true, message: '请输入端口' }]}><InputNumber min={1} max={65535} style={{ width: '100%' }} /></Form.Item></Col>
+              <Col span={12}><Form.Item name={['outbound', 'username']} label="用户名"><Input placeholder="可选" autoComplete="new-username" /></Form.Item></Col>
+              <Col span={12}><Form.Item name={['outbound', 'password']} label="密码"><Input.Password placeholder="可选" autoComplete="new-password" /></Form.Item></Col>
+            </Row>
           </div>
 
           <Form.Item name="remark" label="备注">
