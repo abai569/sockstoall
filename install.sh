@@ -127,12 +127,19 @@ install_sockstoall() {
     
     # 下载源码
     if [ -d "$install_dir" ]; then
-        log_warn "目录已存在，更新中..."
-        cd "$install_dir"
-        git pull || {
-            log_error "Git pull 失败"
-            exit 1
-        }
+        if [ -d "$install_dir/.git" ]; then
+            log_warn "目录已存在，更新中..."
+            cd "$install_dir"
+            git pull || {
+                log_error "Git pull 失败"
+                exit 1
+            }
+        else
+            log_warn "旧目录非 git 仓库，重新安装..."
+            rm -rf "$install_dir"
+            git clone https://github.com/abai569/sockstoall.git "$install_dir"
+            cd "$install_dir"
+        fi
     else
         git clone https://github.com/abai569/sockstoall.git "$install_dir"
         cd "$install_dir"
