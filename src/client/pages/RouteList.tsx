@@ -1,10 +1,36 @@
 import { useEffect, useState } from 'react';
 import { Table, Button, Space, Tag, Popconfirm, Switch, message, Typography, Modal, Form, Input, InputNumber, Select } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, LinkOutlined } from '@ant-design/icons';
 import { routeApi, nodeApi } from '../api/client';
 import type { Route, Node } from '../../shared/types';
 
 const { Title } = Typography;
+
+function parseSocks5Link(str: string): { address: string; port: number; username?: string; password?: string } | null {
+  const trimmed = str.trim();
+  if (!trimmed) return null;
+
+  try {
+    if (trimmed.startsWith('socks5://')) {
+      const url = new URL(trimmed);
+      const address = url.hostname;
+      const port = parseInt(url.port);
+      if (!address || !port) return null;
+      const username = url.username || undefined;
+      const password = url.password || undefined;
+      return { address, port, username, password };
+    }
+
+    const parts = trimmed.split(':');
+    if (parts.length === 2) {
+      return { address: parts[0], port: parseInt(parts[1]) };
+    }
+    if (parts.length === 4) {
+      return { address: parts[0], port: parseInt(parts[1]), username: parts[2], password: parts[3] };
+    }
+  } catch {}
+  return null;
+}
 
 export default function RouteList() {
   const [form] = Form.useForm();
@@ -15,6 +41,7 @@ export default function RouteList() {
   const [editId, setEditId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [nodeLoading, setNodeLoading] = useState(false);
+  const [linkValue, setLinkValue] = useState('');
 
   useEffect(() => { loadData(); }, []);
 
@@ -50,6 +77,20 @@ export default function RouteList() {
   const handleToggle = async (id: string, enabled: boolean) => {
     try { await routeApi.toggle(id, enabled); message.success(enabled ? '已启用' : '已禁用'); loadData(); }
     catch (error) { message.error('操作失败'); }
+  };
+
+  const handleLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setLinkValue(val);
+    const parsed = parseSocks5Link(val);
+    if (parsed) {
+      form.setFieldsValue({
+        'outbound.address': parsed.address,
+        'outbound.port': parsed.port,
+        'outbound.username': parsed.username || undefined,
+        'outbound.password': parsed.password || undefined,
+      });
+    }
   };
 
   const handleSubmit = async () => {
@@ -139,6 +180,15 @@ export default function RouteList() {
 
           <div style={{ background: '#fafafa', padding: '12px 16px', borderRadius: 6, marginBottom: 16 }}>
             <div style={{ fontWeight: 500, marginBottom: 12 }}>出站 SOCKS5 配置</div>
+            <Form.Item label="粘贴 SOCKS5 链接">
+              <Input
+                placeholder="粘贴链接，如 socks5://user:pass@1.2.3.4:1080 或 1.2.3.4:1080:user:pass"
+                prefix={<LinkOutlined />}
+                value={linkValue}
+                onChange={handleLinkChange}
+                allowClear
+              />
+            </Form.Item>
             <Form.Item name={['outbound', 'address']} label="服务器地址" rules={[{ required: true, message: '请输入地址' }]}>
               <Input placeholder="例如：1.2.3.4" />
             </Form.Item>
