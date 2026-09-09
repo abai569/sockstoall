@@ -8,7 +8,6 @@ import type { NodeProtocol } from '../../shared/types';
 const { Title } = Typography;
 const { Password } = Input;
 
-// 生成 UUID v4
 function generateUUID(): string {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = Math.random() * 16 | 0;
@@ -17,7 +16,6 @@ function generateUUID(): string {
   });
 }
 
-// 生成随机端口 30000-65000
 function generateRandomPort(): number {
   return Math.floor(Math.random() * (65000 - 30000 + 1)) + 30000;
 }
@@ -56,6 +54,8 @@ export default function NodeEdit() {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [protocol, setProtocol] = useState<NodeProtocol>('shadowsocks');
+  const [tlsType, setTlsType] = useState<string>('none');
+  const [transport, setTransport] = useState<string>('tcp');
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = !!id;
@@ -72,6 +72,8 @@ export default function NodeEdit() {
       const node = res.data.data;
       if (node) {
         setProtocol(node.protocol);
+        setTlsType(node.config?.tls || 'none');
+        setTransport(node.config?.transport || 'tcp');
         form.setFieldsValue(node);
       }
     } catch (error) {
@@ -83,12 +85,10 @@ export default function NodeEdit() {
   const onFinish = async (values: any) => {
     setLoading(true);
     try {
-      // 端口留空则随机生成 30000-65000
       if (!values.port) {
         values.port = generateRandomPort();
       }
       
-      // UUID 留空则自动生成
       if ((values.protocol === 'vmess' || values.protocol === 'vless') && !values.config?.uuid) {
         if (!values.config) values.config = {};
         values.config.uuid = generateUUID();
@@ -129,34 +129,19 @@ export default function NodeEdit() {
           }}
           style={{ maxWidth: 600 }}
         >
-          <Form.Item
-            name="name"
-            label="节点名称"
-            rules={[{ required: true, message: '请输入节点名称' }]}
-          >
-            <Input placeholder="例如: 我的 SS 节点" />
+          <Form.Item name="name" label="节点名称" rules={[{ required: true, message: '请输入节点名称' }]}>
+            <Input placeholder="例如：我的 SS 节点" />
           </Form.Item>
           
-          <Form.Item
-            name="protocol"
-            label="协议"
-            rules={[{ required: true }]}
-          >
+          <Form.Item name="protocol" label="协议" rules={[{ required: true }]}>
             <Select options={protocolOptions} onChange={(v) => setProtocol(v)} />
           </Form.Item>
           
-          <Form.Item
-            name="port"
-            label="端口"
-            extra="留空则从 30000-65000 随机生成"
-          >
+          <Form.Item name="port" label="端口" extra="留空则从 30000-65000 随机生成">
             <InputNumber min={1} max={65535} style={{ width: '100%' }} placeholder="留空随机" />
           </Form.Item>
           
-          <Form.Item
-            name="listen"
-            label="监听地址"
-          >
+          <Form.Item name="listen" label="监听地址">
             <Input placeholder="0.0.0.0" />
           </Form.Item>
           
@@ -166,52 +151,28 @@ export default function NodeEdit() {
           
           <Divider />
           
-          {/* Shadowsocks 配置 */}
+          {/* Shadowsocks */}
           {protocol === 'shadowsocks' && (
             <>
-              <Form.Item
-                name={['config', 'password']}
-                label="密码"
-                rules={[{ required: true, message: '请输入密码' }]}
-              >
+              <Form.Item name={['config', 'password']} label="密码" rules={[{ required: true, message: '请输入密码' }]}>
                 <Password placeholder="密码" />
               </Form.Item>
-              
-              <Form.Item
-                name={['config', 'encryption']}
-                label="加密方式"
-                rules={[{ required: true }]}
-                initialValue="aes-256-gcm"
-              >
+              <Form.Item name={['config', 'encryption']} label="加密方式" rules={[{ required: true }]} initialValue="aes-256-gcm">
                 <Select options={ssEncryptionOptions} />
               </Form.Item>
             </>
           )}
           
-          {/* VMess 配置 */}
+          {/* VMess */}
           {protocol === 'vmess' && (
             <>
-              <Form.Item
-                name={['config', 'uuid']}
-                label="UUID"
-                extra="留空则自动生成"
-              >
+              <Form.Item name={['config', 'uuid']} label="UUID" extra="留空则自动生成">
                 <Input placeholder="留空自动生成" />
               </Form.Item>
-              
-              <Form.Item
-                name={['config', 'alterId']}
-                label="AlterId"
-                initialValue={0}
-              >
+              <Form.Item name={['config', 'alterId']} label="AlterId" initialValue={0}>
                 <InputNumber min={0} max={65535} style={{ width: '100%' }} />
               </Form.Item>
-              
-              <Form.Item
-                name={['config', 'encryption']}
-                label="加密"
-                initialValue="auto"
-              >
+              <Form.Item name={['config', 'encryption']} label="加密" initialValue="auto">
                 <Select options={[
                   { value: 'auto', label: 'Auto' },
                   { value: 'aes-128-gcm', label: 'AES-128-GCM' },
@@ -220,76 +181,127 @@ export default function NodeEdit() {
                   { value: 'zero', label: 'Zero' },
                 ]} />
               </Form.Item>
-              
-              <Form.Item
-                name={['config', 'transport']}
-                label="传输协议"
-                initialValue="tcp"
-              >
-                <Select options={transportOptions} />
+              <Form.Item name={['config', 'transport']} label="传输协议" initialValue="tcp">
+                <Select options={transportOptions} onChange={(v) => setTransport(v)} />
               </Form.Item>
-              
-              <Form.Item
-                name={['config', 'tls']}
-                label="TLS"
-                initialValue="none"
-              >
+              <Form.Item name={['config', 'tls']} label="TLS" initialValue="none">
                 <Select options={[
                   { value: 'none', label: '无' },
                   { value: 'tls', label: 'TLS' },
-                ]} />
+                ]} onChange={(v) => setTlsType(v)} />
               </Form.Item>
+              
+              {tlsType === 'tls' && (
+                <>
+                  <Form.Item name={['config', 'tlsSettings', 'serverName']} label="Server Name (SNI)">
+                    <Input placeholder="example.com" />
+                  </Form.Item>
+                  <Form.Item name={['config', 'tlsSettings', 'alpn']} label="ALPN">
+                    <Input placeholder="h2,http/1.1" />
+                  </Form.Item>
+                </>
+              )}
+              
+              {transport === 'ws' && (
+                <>
+                  <Form.Item name={['config', 'wsSettings', 'path']} label="WebSocket Path">
+                    <Input placeholder="/path" />
+                  </Form.Item>
+                  <Form.Item name={['config', 'wsSettings', 'host']} label="Host">
+                    <Input placeholder="example.com" />
+                  </Form.Item>
+                </>
+              )}
+              
+              {transport === 'grpc' && (
+                <Form.Item name={['config', 'grpcSettings', 'serviceName']} label="gRPC ServiceName">
+                  <Input placeholder="grpc" />
+                </Form.Item>
+              )}
             </>
           )}
           
-          {/* VLESS 配置 */}
+          {/* VLESS */}
           {protocol === 'vless' && (
             <>
-              <Form.Item
-                name={['config', 'uuid']}
-                label="UUID"
-                extra="留空则自动生成"
-              >
+              <Form.Item name={['config', 'uuid']} label="UUID" extra="留空则自动生成">
                 <Input placeholder="留空自动生成" />
               </Form.Item>
-              
-              <Form.Item
-                name={['config', 'flow']}
-                label="Flow"
-                initialValue="none"
-              >
+              <Form.Item name={['config', 'flow']} label="Flow" initialValue="none">
                 <Select options={[
                   { value: 'none', label: 'None' },
                   { value: 'xtls-rprx-vision', label: 'xtls-rprx-vision' },
                   { value: 'xtls-rprx-vision-udp443', label: 'xtls-rprx-vision-udp443' },
                 ]} />
               </Form.Item>
-              
-              <Form.Item
-                name={['config', 'transport']}
-                label="传输协议"
-                initialValue="tcp"
-              >
-                <Select options={transportOptions} />
+              <Form.Item name={['config', 'transport']} label="传输协议" initialValue="tcp">
+                <Select options={transportOptions} onChange={(v) => setTransport(v)} />
+              </Form.Item>
+              <Form.Item name={['config', 'tls']} label="安全" initialValue="none">
+                <Select options={tlsOptions} onChange={(v) => setTlsType(v)} />
               </Form.Item>
               
-              <Form.Item
-                name={['config', 'tls']}
-                label="安全"
-                initialValue="none"
-              >
-                <Select options={tlsOptions} />
-              </Form.Item>
+              {/* TLS 配置 */}
+              {tlsType === 'tls' && (
+                <>
+                  <Form.Item name={['config', 'tlsSettings', 'serverName']} label="Server Name (SNI)">
+                    <Input placeholder="example.com" />
+                  </Form.Item>
+                  <Form.Item name={['config', 'tlsSettings', 'alpn']} label="ALPN">
+                    <Input placeholder="h2,http/1.1" />
+                  </Form.Item>
+                </>
+              )}
+              
+              {/* Reality 配置 */}
+              {tlsType === 'reality' && (
+                <>
+                  <Form.Item name={['config', 'realitySettings', 'dest']} label="目标地址 (dest)" rules={[{ required: true, message: '请输入目标地址' }]}>
+                    <Input placeholder="example.com:443" />
+                  </Form.Item>
+                  <Form.Item name={['config', 'realitySettings', 'serverNames']} label="Server Names" extra="多个用逗号分隔" rules={[{ required: true, message: '请输入 Server Names' }]}>
+                    <Input placeholder="example.com,www.example.com" />
+                  </Form.Item>
+                  <Form.Item name={['config', 'realitySettings', 'privateKey']} label="Private Key" rules={[{ required: true, message: '请输入私钥' }]}>
+                    <Input placeholder="Reality 私钥" />
+                  </Form.Item>
+                  <Form.Item name={['config', 'realitySettings', 'publicKey']} label="Public Key (用于分享)">
+                    <Input placeholder="Reality 公钥" />
+                  </Form.Item>
+                  <Form.Item name={['config', 'realitySettings', 'shortId']} label="Short ID" rules={[{ required: true, message: '请输入 Short ID' }]}>
+                    <Input placeholder="16 位十六进制，如：a1b2c3d4e5f6a7b8" />
+                  </Form.Item>
+                  <Form.Item name={['config', 'realitySettings', 'spiderX']} label="SpiderX">
+                    <Input placeholder="/" />
+                  </Form.Item>
+                </>
+              )}
+              
+              {transport === 'ws' && (
+                <>
+                  <Form.Item name={['config', 'wsSettings', 'path']} label="WebSocket Path">
+                    <Input placeholder="/path" />
+                  </Form.Item>
+                  <Form.Item name={['config', 'wsSettings', 'host']} label="Host">
+                    <Input placeholder="example.com" />
+                  </Form.Item>
+                </>
+              )}
+              
+              {transport === 'grpc' && (
+                <Form.Item name={['config', 'grpcSettings', 'serviceName']} label="gRPC ServiceName">
+                  <Input placeholder="grpc" />
+                </Form.Item>
+              )}
             </>
           )}
           
-          {/* SOCKS 配置 */}
+          {/* SOCKS */}
           {protocol === 'socks' && (
             <>
               <Form.Item name={['config', 'username']} label="用户名">
                 <Input placeholder="可选" />
               </Form.Item>
-              
               <Form.Item name={['config', 'password']} label="密码">
                 <Password placeholder="可选" />
               </Form.Item>

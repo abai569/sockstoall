@@ -1,236 +1,104 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Space, Tag, Popconfirm, Switch, message, Typography } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, PlayCircleOutlined, PauseCircleOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
-import { routeApi, nodeApi, xrayApi } from '../api/client';
+import { Table, Button, Space, Tag, Popconfirm, Switch, message, Typography, Modal, Form, Input, InputNumber, Select } from 'antd';
+import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { routeApi, nodeApi } from '../api/client';
 import type { Route, Node } from '../../shared/types';
 
 const { Title } = Typography;
 
-interface RunningInstance {
-  routeId: string;
-  pid: number;
-  uptime: number;
-}
-
 export default function RouteList() {
+  const [form] = Form.useForm();
   const [loading, setLoading] = useState(true);
   const [routes, setRoutes] = useState<Route[]>([]);
-  const [nodes, setNodes] = useState<Map<string, Node>>(new Map());
-  const [runningInstances, setRunningInstances] = useState<RunningInstance[]>([]);
-  const navigate = useNavigate();
+  const [nodes, setNodes] = useState<Node[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [nodeLoading, setNodeLoading] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     setLoading(true);
+    setNodeLoading(true);
     try {
-      const [routesRes, nodesRes, xrayRes] = await Promise.all([
-        routeApi.list(),
-        nodeApi.list(),
-        xrayApi.status(),
-      ]);
-      
-      const routeItems = routesRes.data.data?.items || [];
-      setRoutes(routeItems);
-      
-      const nodeMap = new Map<string, Node>();
-      (nodesRes.data.data?.items || []).forEach((n: Node) => nodeMap.set(n.id, n));
-      setNodes(nodeMap);
-      
-      const xrayStatus = xrayRes.data.data;
-      setRunningInstances(xrayStatus?.runningInstances || []);
-    } catch (error) {
-      message.error('加载数据失败');
-    } finally {
-      setLoading(false);
-    }
+      const [routesRes, nodesRes] = await Promise.all([routeApi.list(), nodeApi.list()]);
+      setRoutes(routesRes.data.data?.items || []);
+      setNodes(nodesRes.data.data?.items || []);
+    } catch (error) { message.error('加载数据失败'); }
+    finally { setLoading(false); setNodeLoading(false); }
+  };
+
+  const openCreate = () => {
+    setEditId(null);
+    form.resetFields();
+    form.setFieldsValue({ enabled: true });
+    setModalOpen(true);
+  };
+
+  const openEdit = (record: Route) => {
+    setEditId(record.id);
+    form.setFieldsValue(record);
+    setModalOpen(true);
   };
 
   const handleDelete = async (id: string) => {
-    // 检查是否正在运行
-    if (isRouteRunning(id)) {
-      message.error('请先停止该规则再删除');
-      return;
-    }
-    
-    try {
-      await routeApi.delete(id);
-      message.success('删除成功');
-      loadData();
-    } catch (error) {
-      message.error('删除失败');
-    }
+    try { await routeApi.delete(id); message.success('删除成功'); loadData(); }
+    catch (error) { message.error('删除失败'); }
   };
 
   const handleToggle = async (id: string, enabled: boolean) => {
-    try {
-      await routeApi.toggle(id, enabled);
-      message.success(enabled ? '已启用' : '已禁用');
-      loadData();
-    } catch (error) {
-      message.error('操作失败');
-    }
+    try { await routeApi.toggle(id, enabled); message.success(enabled ? '已启用' : '已禁用'); loadData(); }
+    catch (error) { message.error('操作失败'); }
   };
 
-  const handleStart = async (routeId: string) => {
+  const handleSubmit = async () => {
     try {
-      await xrayApi.start(routeId);
-      message.success('启动成功');
-      loadData();
-    } catch (error: any) {
-      message.error(error.response?.data?.error || '启动失败');
-    }
-  };
-
-  const handleStop = async (routeId: string) => {
-    try {
-      await xrayApi.stop(routeId);
-      message.success('已停止');
+      const values = await form.validateFields();
+      setSubmitting(true);
+      if (editId) {
+        await routeApi.update(editId, values);
+        message.success('更新成功');
+      } else {
+        await routeApi.create(values);
+        message.success('创建成功');
+      }
+      setModalOpen(false);
       loadData();
     } catch (error: any) {
-      message.error(error.response?.data?.error || '停止失败');
-    }
-  };
-
-  const handleStopAll = async () => {
-    try {
-      await xrayApi.stopAll();
-      message.success('已停止所有实例');
-      loadData();
-    } catch (error: any) {
-      message.error(error.response?.data?.error || '停止失败');
-    }
-  };
-
-  const isRouteRunning = (routeId: string): boolean => {
-    return runningInstances.some(inst => inst.routeId === routeId);
-  };
-
-  const getRouteInstance = (routeId: string): RunningInstance | undefined => {
-    return runningInstances.find(inst => inst.routeId === routeId);
-  };
-
-  const formatUptime = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    
-    if (hours > 0) {
-      return `${hours}小时${minutes}分钟`;
-    }
-    if (minutes > 0) {
-      return `${minutes}分钟${secs}秒`;
-    }
-    return `${secs}秒`;
+      if (error.errorFields) return;
+      message.error(error.response?.data?.error || '操作失败');
+    } finally { setSubmitting(false); }
   };
 
   const columns = [
+    { title: '名称', dataIndex: 'name', key: 'name' },
     {
-      title: '名称',
-      dataIndex: 'name',
-      key: 'name',
-    },
-    {
-      title: '入站节点',
-      dataIndex: 'nodeId',
-      key: 'nodeId',
+      title: '入站节点', dataIndex: 'nodeId', key: 'nodeId',
       render: (nodeId: string) => {
-        const node = nodes.get(nodeId);
+        const node = nodes.find(n => n.id === nodeId);
         return node ? (
-          <Space>
-            <span>{node.name}</span>
-            <Tag>{node.protocol}</Tag>
-            <Tag color="blue">:{node.port}</Tag>
-          </Space>
-        ) : (
-          <Tag color="red">节点已删除</Tag>
-        );
+          <Space><span>{node.name}</span><Tag>{node.protocol}</Tag><Tag color="blue">:{node.port}</Tag></Space>
+        ) : <Tag color="red">节点已删除</Tag>;
       },
     },
+    { title: '出站 SOCKS', key: 'outbound', render: (_: any, r: Route) => <span>{r.outbound.address}:{r.outbound.port}</span> },
     {
-      title: '出站 SOCKS',
-      key: 'outbound',
-      render: (_: any, record: Route) => (
-        <span>{record.outbound.address}:{record.outbound.port}</span>
+      title: '状态', dataIndex: 'enabled', key: 'enabled',
+      render: (enabled: boolean, r: Route) => (
+        <Switch checked={enabled} onChange={(v) => handleToggle(r.id, v)} checkedChildren="启用" unCheckedChildren="禁用" />
       ),
     },
     {
-      title: '状态',
-      key: 'status',
-      render: (_: any, record: Route) => {
-        const running = isRouteRunning(record.id);
-        const instance = getRouteInstance(record.id);
-        
-        return (
-          <Space>
-            <Switch 
-              checked={record.enabled} 
-              onChange={(v) => handleToggle(record.id, v)}
-              checkedChildren="启用"
-              unCheckedChildren="禁用"
-            />
-            {running && (
-              <Tag color="green" icon={<PlayCircleOutlined />}>
-                运行中 {instance && `(${formatUptime(instance.uptime)})`}
-              </Tag>
-            )}
-          </Space>
-        );
-      },
-    },
-    {
-      title: '操作',
-      key: 'action',
-      render: (_: any, record: Route) => {
-        const running = isRouteRunning(record.id);
-        
-        return (
-          <Space>
-            {running ? (
-              <Button 
-                type="link" 
-                icon={<PauseCircleOutlined />} 
-                onClick={() => handleStop(record.id)}
-                danger
-              >
-                停止
-              </Button>
-            ) : (
-              record.enabled && (
-                <Button 
-                  type="link" 
-                  icon={<PlayCircleOutlined />} 
-                  onClick={() => handleStart(record.id)}
-                  style={{ color: '#52c41a' }}
-                >
-                  启动
-                </Button>
-              )
-            )}
-            <Button 
-              type="link" 
-              icon={<EditOutlined />} 
-              onClick={() => navigate(`/routes/${record.id}/edit`)}
-              disabled={running}
-            >
-              编辑
-            </Button>
-            <Popconfirm
-              title="确定删除此规则？"
-              onConfirm={() => handleDelete(record.id)}
-              okText="确定"
-              cancelText="取消"
-            >
-              <Button type="link" danger icon={<DeleteOutlined />} disabled={running}>
-                删除
-              </Button>
-            </Popconfirm>
-          </Space>
-        );
-      },
+      title: '操作', key: 'action',
+      render: (_: any, r: Route) => (
+        <Space>
+          <Button type="link" icon={<EditOutlined />} onClick={() => openEdit(r)}>编辑</Button>
+          <Popconfirm title="确定删除？" onConfirm={() => handleDelete(r.id)} okText="确定" cancelText="取消">
+            <Button type="link" danger icon={<DeleteOutlined />}>删除</Button>
+          </Popconfirm>
+        </Space>
+      ),
     },
   ];
 
@@ -238,34 +106,58 @@ export default function RouteList() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
         <Title level={4} style={{ margin: 0 }}>转发规则</Title>
-        <Space>
-          {runningInstances.length > 0 && (
-            <Button danger icon={<PauseCircleOutlined />} onClick={handleStopAll}>
-              停止全部 ({runningInstances.length})
-            </Button>
-          )}
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/routes/new')}>
-            创建规则
-          </Button>
-        </Space>
+        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>创建规则</Button>
       </div>
-      
-      {runningInstances.length > 0 && (
-        <div style={{ marginBottom: 16, padding: '8px 16px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: 6 }}>
-          <Space>
-            <PlayCircleOutlined style={{ color: '#52c41a' }} />
-            <span>正在运行 {runningInstances.length} 个转发实例</span>
-          </Space>
-        </div>
-      )}
-      
-      <Table
-        loading={loading}
-        columns={columns}
-        dataSource={routes}
-        rowKey="id"
-        pagination={{ pageSize: 10 }}
-      />
+      <Table loading={loading} columns={columns} dataSource={routes} rowKey="id" pagination={{ pageSize: 10 }} />
+
+      {/* 创建/编辑弹窗 */}
+      <Modal
+        title={editId ? '编辑规则' : '创建规则'}
+        open={modalOpen}
+        onOk={handleSubmit}
+        onCancel={() => setModalOpen(false)}
+        confirmLoading={submitting}
+        width={500}
+        okText={editId ? '保存' : '创建'}
+      >
+        <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
+          <Form.Item name="name" label="规则名称" rules={[{ required: true, message: '请输入规则名称' }]}>
+            <Input placeholder="例如：我的转发规则" />
+          </Form.Item>
+          <Form.Item name="nodeId" label="入站节点" rules={[{ required: true, message: '请选择入站节点' }]}>
+            <Select placeholder="选择本地节点" showSearch optionFilterProp="label" loading={nodeLoading}>
+              {nodes.map(node => (
+                <Select.Option key={node.id} value={node.id} label={node.name}>
+                  <Space>
+                    <span>{node.name}</span>
+                    <span style={{ color: '#888' }}>({node.protocol}:{node.port})</span>
+                  </Space>
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <div style={{ background: '#fafafa', padding: '12px 16px', borderRadius: 6, marginBottom: 16 }}>
+            <div style={{ fontWeight: 500, marginBottom: 12 }}>出站 SOCKS5 配置</div>
+            <Form.Item name={['outbound', 'address']} label="服务器地址" rules={[{ required: true, message: '请输入地址' }]}>
+              <Input placeholder="例如：1.2.3.4" />
+            </Form.Item>
+            <Form.Item name={['outbound', 'port']} label="端口" rules={[{ required: true, message: '请输入端口' }]}>
+              <InputNumber min={1} max={65535} style={{ width: '100%' }} />
+            </Form.Item>
+            <Form.Item name={['outbound', 'username']} label="用户名">
+              <Input placeholder="可选" autoComplete="new-username" />
+            </Form.Item>
+            <Form.Item name={['outbound', 'password']} label="密码">
+              <Input.Password placeholder="可选" autoComplete="new-password" />
+            </Form.Item>
+          </div>
+
+          <Form.Item name="remark" label="备注">
+            <Input.TextArea rows={2} placeholder="可选备注" />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

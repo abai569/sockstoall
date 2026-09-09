@@ -16,6 +16,10 @@ import { linkRoutes } from './node/link-routes.js';
 import { routeRoutes } from './route/routes.js';
 import { xrayRoutes } from './xray/routes.js';
 import { initWebSocket } from './xray/ws-log.js';
+import { xrayService } from './xray/service.js';
+import { getNodes } from './node/node-store.js';
+import { getRoutes } from './route/route-store.js';
+import { getNodeById } from './node/node-store.js';
 
 const app = new Hono();
 const PORT = parseInt(process.env.PORT || '3456');
@@ -48,22 +52,17 @@ app.get('/api/health', (c) => {
   return c.json({ status: 'ok', timestamp: Date.now() });
 });
 
-// 静态文件 - 始终服务前端文件（dist/client 存在时）
+// 静态文件
 const clientDir = join(process.cwd(), 'dist/client');
 try {
   readFileSync(join(clientDir, 'index.html'));
-  // 前端资源存在，注册静态文件服务
   app.use('/assets/*', serveStatic({ root: 'dist/client' }));
-  
-  // SPA fallback
   app.get('*', (c) => {
     const indexPath = join(process.cwd(), 'dist/client/index.html');
     const content = readFileSync(indexPath, 'utf-8');
     return c.html(content);
   });
-} catch {
-  // dist/client 不存在，跳过静态文件服务
-}
+} catch {}
 
 // 创建 HTTP 服务器
 const server = createAdaptorServer({ fetch: app.fetch });
@@ -86,17 +85,42 @@ server.listen(PORT, () => {
 ║                                                           ║
 ╚═══════════════════════════════════════════════════════════╝
   `);
+
+  // 自动启动 Xray 服务（类似 3X-UI）
+  if (xrayService.isInstalled()) {
+    const nodes = getNodes().filter(n => n.enabled);
+    const routes = getRoutes().filter(r => r.enabled);
+    const routeDetails = routes
+      .map(r => {
+        const node = getNodeById(r.nodeId);
+        return node ? { routeId: r.id, node, outbound: r.outbound } : null;
+      })
+      .filter(Boolean) as any[];
+    
+    xrayService.setNodesAndRoutes(nodes, routeDetails);
+    
+    const result = xrayService.start();
+    if (result.success) {
+      console.log('✓ Xray service auto-started');
+    } else {
+      console.log('✗ Xray auto-start failed:', result.error);
+    }
+  } else {
+    console.log(' Xray not installed, skipping auto-start');
+  }
 });
 
 // 优雅退出
 process.on('SIGINT', () => {
   console.log('\nShutting down...');
+  xrayService.stop();
   server.close();
   process.exit(0);
 });
 
 process.on('SIGTERM', () => {
   console.log('\nShutting down...');
+  xrayService.stop();
   server.close();
   process.exit(0);
 });

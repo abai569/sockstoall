@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Card, Row, Col, Statistic, Tag, Space, Typography, Spin, Alert } from 'antd';
+import { Card, Row, Col, Statistic, Tag, Space, Typography, Spin, Alert, Button, message } from 'antd';
 import { 
-  NodeIndexOutlined, 
-  SwapOutlined, 
-  CheckCircleOutlined, 
-  ThunderboltOutlined,
+  NodeIndexOutlined, SwapOutlined, CheckCircleOutlined, 
+  ThunderboltOutlined, PlayCircleOutlined, PauseCircleOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { nodeApi, routeApi, xrayApi } from '../api/client';
@@ -16,32 +14,23 @@ export default function Dashboard() {
   const [nodeCount, setNodeCount] = useState(0);
   const [routeCount, setRouteCount] = useState(0);
   const [enabledRoutes, setEnabledRoutes] = useState(0);
-  const [runningInstances, setRunningInstances] = useState(0);
   const [xrayStatus, setXrayStatus] = useState<any>(null);
+  const [actionLoading, setActionLoading] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     setLoading(true);
     try {
       const [nodesRes, routesRes, xrayRes] = await Promise.all([
-        nodeApi.list(),
-        routeApi.list(),
-        xrayApi.status(),
+        nodeApi.list(), routeApi.list(), xrayApi.status(),
       ]);
-      
       setNodeCount(nodesRes.data.data?.total || 0);
-      
       const routes = routesRes.data.data?.items || [];
       setRouteCount(routes.length);
       setEnabledRoutes(routes.filter((r: any) => r.enabled).length);
-      
-      const xrayData = xrayRes.data.data;
-      setXrayStatus(xrayData);
-      setRunningInstances(xrayData?.instanceCount || 0);
+      setXrayStatus(xrayRes.data.data);
     } catch (error) {
       console.error('Load dashboard data error:', error);
     } finally {
@@ -49,134 +38,114 @@ export default function Dashboard() {
     }
   };
 
+  const handleXrayAction = async (action: 'start' | 'stop') => {
+    setActionLoading(true);
+    try {
+      if (action === 'start') {
+        await xrayApi.start();
+        message.success('Xray 服务已启动');
+      } else {
+        await xrayApi.stop();
+        message.success('Xray 服务已停止');
+      }
+      loadData();
+    } catch (error: any) {
+      message.error(error.response?.data?.error || '操作失败');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const formatUptime = (seconds: number): string => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    if (h > 0) return `${h}小时${m}分钟`;
+    if (m > 0) return `${m}分钟${s}秒`;
+    return `${s}秒`;
+  };
+
   if (loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: 100 }}>
-        <Spin size="large" />
-      </div>
-    );
+    return <div style={{ textAlign: 'center', padding: 100 }}><Spin size="large" /></div>;
   }
 
   return (
     <div>
       <Title level={4} style={{ marginBottom: 24 }}>系统总览</Title>
       
-      {/* Xray 状态卡片 */}
       <Card 
-        title="Xray 状态" 
+        title="Xray 服务" 
         style={{ marginBottom: 24 }}
         extra={
           xrayStatus?.installed ? (
-            <Tag color="success" icon={<CheckCircleOutlined />}>已安装</Tag>
+            <Tag color="success" icon={<CheckCircleOutlined />}>已安装 {xrayStatus.version}</Tag>
           ) : (
             <Tag color="error">未安装</Tag>
           )
         }
       >
+        {xrayStatus && !xrayStatus.installed && (
+          <Alert
+            message="Xray 未安装"
+            description="请将 xray 可执行文件放到 bin/ 目录，或从 https://github.com/XTLS/Xray-core/releases 下载"
+            type="warning" showIcon style={{ marginBottom: 16 }}
+          />
+        )}
         <Row gutter={16}>
           <Col span={6}>
             <Statistic
-              title="状态"
+              title="服务状态"
               value={xrayStatus?.running ? '运行中' : '已停止'}
               valueStyle={{ color: xrayStatus?.running ? '#52c41a' : '#8c8c8c' }}
               prefix={xrayStatus?.running ? <ThunderboltOutlined /> : null}
             />
           </Col>
           <Col span={6}>
-            <Statistic
-              title="运行实例"
-              value={runningInstances}
-              suffix="个"
-              valueStyle={{ color: runningInstances > 0 ? '#1890ff' : '#8c8c8c' }}
-            />
+            <Statistic title="运行时长" value={xrayStatus?.running ? formatUptime(xrayStatus.uptime) : '-'} />
           </Col>
           <Col span={6}>
-            <Statistic
-              title="版本"
-              value={xrayStatus?.version || '未检测到'}
-              valueStyle={{ fontSize: 16 }}
-            />
+            <Statistic title="PID" value={xrayStatus?.pid || '-'} />
           </Col>
           <Col span={6}>
-            <Statistic
-              title="路径"
-              value={xrayStatus?.path ? '已配置' : '未配置'}
-              valueStyle={{ fontSize: 16, color: xrayStatus?.path ? '#52c41a' : '#faad14' }}
-            />
+            <Space>
+              {xrayStatus?.running ? (
+                <Button danger icon={<PauseCircleOutlined />} onClick={() => handleXrayAction('stop')} loading={actionLoading}>停止服务</Button>
+              ) : (
+                <Button type="primary" icon={<PlayCircleOutlined />} onClick={() => handleXrayAction('start')} loading={actionLoading} disabled={!xrayStatus?.installed}>启动服务</Button>
+              )}
+            </Space>
           </Col>
         </Row>
       </Card>
       
-      {/* Xray 未安装警告 */}
-      {xrayStatus && !xrayStatus.installed && (
-        <Alert
-          message="Xray 未安装"
-          description="请先安装 Xray-core 才能使用代理功能。请将 xray 可执行文件放到 bin/ 目录。"
-          type="warning"
-          showIcon
-          style={{ marginBottom: 24 }}
-        />
-      )}
-      
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} lg={6}>
           <Card hoverable onClick={() => navigate('/nodes')}>
-            <Statistic
-              title="节点数量"
-              value={nodeCount}
-              prefix={<NodeIndexOutlined />}
-              valueStyle={{ color: '#1890ff' }}
-            />
+            <Statistic title="节点数量" value={nodeCount} prefix={<NodeIndexOutlined />} valueStyle={{ color: '#1890ff' }} />
           </Card>
         </Col>
-        
         <Col xs={24} sm={12} lg={6}>
           <Card hoverable onClick={() => navigate('/routes')}>
-            <Statistic
-              title="转发规则"
-              value={routeCount}
-              prefix={<SwapOutlined />}
-              valueStyle={{ color: '#722ed1' }}
-            />
+            <Statistic title="转发规则" value={routeCount} prefix={<SwapOutlined />} valueStyle={{ color: '#722ed1' }} />
           </Card>
         </Col>
-        
         <Col xs={24} sm={12} lg={6}>
           <Card>
-            <Statistic
-              title="已启用规则"
-              value={enabledRoutes}
-              prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: '#52c41a' }}
-            />
+            <Statistic title="已启用规则" value={enabledRoutes} prefix={<CheckCircleOutlined />} valueStyle={{ color: '#52c41a' }} />
           </Card>
         </Col>
-        
         <Col xs={24} sm={12} lg={6}>
           <Card>
-            <Statistic
-              title="运行实例"
-              value={runningInstances}
-              prefix={<ThunderboltOutlined />}
-              valueStyle={{ color: runningInstances > 0 ? '#52c41a' : '#8c8c8c' }}
-              suffix={runningInstances > 0 ? '个' : ''}
-            />
+            <Statistic title="入站端口" value={nodeCount > 0 ? `${nodeCount} 个` : '无'} prefix={<ThunderboltOutlined />} />
           </Card>
         </Col>
       </Row>
       
-      {/* 快捷操作 */}
       <Card title="快捷操作" style={{ marginTop: 24 }}>
         <Space wrap>
-          <Tag color="blue" style={{ cursor: 'pointer', padding: '8px 16px' }} onClick={() => navigate('/nodes/new')}>
-            创建节点
-          </Tag>
-          <Tag color="purple" style={{ cursor: 'pointer', padding: '8px 16px' }} onClick={() => navigate('/routes/new')}>
-            创建规则
-          </Tag>
-          <Tag color="cyan" style={{ cursor: 'pointer', padding: '8px 16px' }} onClick={() => navigate('/logs')}>
-            查看日志
-          </Tag>
+          <Tag color="blue" style={{ cursor: 'pointer', padding: '8px 16px' }} onClick={() => navigate('/nodes/new')}>创建节点</Tag>
+          <Tag color="purple" style={{ cursor: 'pointer', padding: '8px 16px' }} onClick={() => navigate('/routes/new')}>创建规则</Tag>
+          <Tag color="cyan" style={{ cursor: 'pointer', padding: '8px 16px' }} onClick={() => navigate('/logs')}>查看日志</Tag>
         </Space>
       </Card>
     </div>

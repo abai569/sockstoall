@@ -35,6 +35,7 @@ interface BaseNode {
   protocol: NodeProtocol;
   port: number;
   listen?: string; // 监听地址，默认 0.0.0.0
+  enabled: boolean; // 是否启用
   remark?: string;
   createdAt: string;
   updatedAt: string;
@@ -122,8 +123,8 @@ export interface SocksNode extends BaseNode {
 /** 节点联合类型 */
 export type Node = SSNode | VMessNode | VLESSNode | SocksNode;
 
-/** 创建节点请求 (不含 id 和时间戳) */
-export type CreateNodeRequest = Omit<Node, 'id' | 'createdAt' | 'updatedAt'>;
+/** 创建节点请求 (不含 id 和时间戳，enabled 可选默认 true) */
+export type CreateNodeRequest = Omit<Node, 'id' | 'createdAt' | 'updatedAt' | 'enabled'> & { enabled?: boolean };
 
 // ==================== 转发规则相关 ====================
 

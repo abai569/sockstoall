@@ -44,6 +44,7 @@ export function createNode(data: CreateNodeRequest): Node {
   const newNode: Node = {
     ...data,
     id: randomUUID(),
+    enabled: true, // 默认启用
     createdAt: now,
     updatedAt: now,
   } as Node;
@@ -52,6 +53,22 @@ export function createNode(data: CreateNodeRequest): Node {
   saveNodes(nodes);
   
   return newNode;
+}
+
+export function setNodeEnabled(id: string, enabled: boolean): Node | null {
+  const nodes = getNodes();
+  const index = nodes.findIndex(n => n.id === id);
+  
+  if (index === -1) return null;
+  
+  nodes[index] = {
+    ...nodes[index],
+    enabled,
+    updatedAt: new Date().toISOString(),
+  };
+  
+  saveNodes(nodes);
+  return nodes[index];
 }
 
 export function updateNode(id: string, data: Partial<CreateNodeRequest>): Node | null {
