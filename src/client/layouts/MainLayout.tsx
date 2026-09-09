@@ -13,6 +13,8 @@ import {
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
+declare const __APP_VERSION__: string;
+
 const { Header, Sider, Content } = Layout;
 
 const menuItems = [
@@ -75,6 +77,19 @@ export default function MainLayout() {
           items={menuItems}
           onClick={handleMenuClick}
         />
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          padding: '12px 0',
+          textAlign: 'center',
+          color: '#999',
+          fontSize: 12,
+          borderTop: '1px solid #f0f0f0',
+        }}>
+          v{__APP_VERSION__}
+        </div>
       </Sider>
       <Layout>
         <Header style={{ 

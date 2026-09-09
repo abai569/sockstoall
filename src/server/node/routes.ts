@@ -36,10 +36,13 @@ function generateX25519KeyPair(): { privateKey: string; publicKey: string } | nu
       cwd: ROOT_DIR,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
-    // 输出格式: Private key: xxx\nPublic key: xxx
+    // xray 旧版输出: Private key: xxx\nPublic key: xxx
+    // xray 26.x 输出: PrivateKey: xxx\nPassword (PublicKey): xxx
     const lines = output.split('\n');
-    const privateKey = lines.find(l => l.startsWith('Private key:'))?.split(':')[1]?.trim() || '';
-    const publicKey = lines.find(l => l.startsWith('Public key:'))?.split(':')[1]?.trim() || '';
+    const privateKeyLine = lines.find(l => l.startsWith('PrivateKey:')) || lines.find(l => l.startsWith('Private key:'));
+    const publicKeyLine = lines.find(l => l.includes('PublicKey')) || lines.find(l => l.startsWith('Public key:'));
+    const privateKey = privateKeyLine?.split(':').slice(1).join(':').trim() || '';
+    const publicKey = publicKeyLine?.split(':').slice(1).join(':').trim() || '';
     if (privateKey && publicKey) {
       return { privateKey, publicKey };
     }
