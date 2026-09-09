@@ -39,9 +39,11 @@ export class XrayService extends EventEmitter {
   }
 
   isInstalled(): boolean {
-    if (!this.xrayPath) return false;
-    const binPath = join(BIN_DIR, process.platform === 'win32' ? 'xray.exe' : 'xray');
-    return existsSync(binPath);
+    return !!this.xrayPath && existsSync(this.xrayPath);
+  }
+
+  getXrayPath(): string | null {
+    return this.xrayPath;
   }
 
   async getVersion(): Promise<string | null> {

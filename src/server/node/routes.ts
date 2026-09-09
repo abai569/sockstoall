@@ -10,6 +10,7 @@ import { testNodeLatency } from './latency-tester.js';
 import { xrayService } from '../xray/service.js';
 import { getRoutes } from '../route/route-store.js';
 import { execSync } from 'child_process';
+import { existsSync } from 'fs';
 import { join } from 'path';
 
 export const nodeRoutes = new Hono();
@@ -20,9 +21,21 @@ const BIN_DIR = join(ROOT_DIR, 'bin');
 // 调用 xray x25519 生成密钥对
 function generateX25519KeyPair(): { privateKey: string; publicKey: string } | null {
   try {
-    const isWindows = process.platform === 'win32';
-    const xrayPath = join(BIN_DIR, isWindows ? 'xray.exe' : 'xray');
-    const output = execSync(`"${xrayPath}" x25519`, { encoding: 'utf-8' });
+    let xrayPath = xrayService.getXrayPath();
+    if (!xrayPath) {
+      const isWindows = process.platform === 'win32';
+      xrayPath = join(BIN_DIR, isWindows ? 'xray.exe' : 'xray');
+    }
+    if (!xrayPath || !existsSync(xrayPath)) {
+      console.error(`Xray binary not found at: ${xrayPath || 'unknown'}, cwd: ${process.cwd()}`);
+      return null;
+    }
+    console.log(`Generating x25519 keys using: ${xrayPath}`);
+    const output = execSync(`"${xrayPath}" x25519`, {
+      encoding: 'utf-8',
+      cwd: ROOT_DIR,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
     // 输出格式: Private key: xxx\nPublic key: xxx
     const lines = output.split('\n');
     const privateKey = lines.find(l => l.startsWith('Private key:'))?.split(':')[1]?.trim() || '';
@@ -30,8 +43,11 @@ function generateX25519KeyPair(): { privateKey: string; publicKey: string } | nu
     if (privateKey && publicKey) {
       return { privateKey, publicKey };
     }
-  } catch (error) {
-    console.error('Failed to generate x25519 keys:', error);
+    console.error('Failed to parse x25519 output:', output);
+  } catch (error: any) {
+    console.error('Failed to generate x25519 keys:', error.message);
+    if (error.stderr) console.error('xray stderr:', error.stderr.toString());
+    if (error.stdout) console.error('xray stdout:', error.stdout.toString());
   }
   return null;
 }
