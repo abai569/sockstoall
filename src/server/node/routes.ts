@@ -129,6 +129,11 @@ nodeRoutes.post('/', async (c) => {
       fillRealityConfig(body.config);
     }
     
+    const config = body.config as any;
+    if (config?.tls === 'reality' && (!config.realitySettings?.privateKey || !config.realitySettings?.publicKey)) {
+      return c.json<ApiResponse>({ success: false, error: 'Reality 密钥生成失败，请确认 Xray 已安装' }, 400);
+    }
+
     const node = createNode(body);
     reloadXray();
     
@@ -153,6 +158,11 @@ nodeRoutes.put('/:id', async (c) => {
       fillRealityConfig(body.config);
     }
     
+    const config = body.config as any;
+    if (config?.tls === 'reality' && (!config.realitySettings?.privateKey || !config.realitySettings?.publicKey)) {
+      return c.json<ApiResponse>({ success: false, error: 'Reality 密钥生成失败，请确认 Xray 已安装' }, 400);
+    }
+
     const node = updateNode(id, body);
     if (!node) {
       return c.json<ApiResponse>({ success: false, error: '节点不存在' }, 404);

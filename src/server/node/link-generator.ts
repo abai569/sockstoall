@@ -2,7 +2,36 @@
  * 分享链接生成器
  */
 
+import { execSync } from 'child_process';
 import type { Node } from '../../shared/types.js';
+
+let cachedShareHost: string | null = null;
+
+function detectPublicIPv4(): string | null {
+  if (cachedShareHost) return cachedShareHost;
+  const urls = [
+    'https://api4.ipify.org',
+    'https://ipv4.icanhazip.com',
+    'https://v4.ident.me',
+  ];
+  for (const url of urls) {
+    try {
+      const ip = execSync(`curl -fsSL --max-time 3 "${url}" 2>/dev/null || wget -qO- --timeout=3 "${url}" 2>/dev/null`, { timeout: 5000, encoding: 'utf-8' }).trim();
+      if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
+        cachedShareHost = ip;
+        return ip;
+      }
+    } catch { /* ignore */ }
+  }
+  return null;
+}
+
+function resolveShareHost(node: Node): string {
+  if (node.listen && node.listen !== '0.0.0.0' && node.listen !== '::') {
+    return node.listen;
+  }
+  return detectPublicIPv4() || '127.0.0.1';
+}
 
 /**
  * 生成 Shadowsocks 分享链接
@@ -13,7 +42,7 @@ export function generateSSLink(node: Node): string {
   
   const method = node.config.encryption;
   const password = node.config.password;
-  const host = node.listen || '127.0.0.1';
+  const host = resolveShareHost(node);
   const port = node.port;
   const name = encodeURIComponent(node.name);
   
@@ -30,7 +59,7 @@ export function generateSSLink(node: Node): string {
 export function generateVMessLink(node: Node): string {
   if (node.protocol !== 'vmess') return '';
   
-  const host = node.listen || '127.0.0.1';
+  const host = resolveShareHost(node);
   const config = {
     v: '2',
     ps: node.name,
@@ -60,7 +89,7 @@ export function generateVMessLink(node: Node): string {
 export function generateVLESSLink(node: Node): string {
   if (node.protocol !== 'vless') return '';
   
-  const host = node.listen || '127.0.0.1';
+  const host = resolveShareHost(node);
   const uuid = node.config.uuid;
   const port = node.port;
   const name = encodeURIComponent(node.name);
@@ -82,21 +111,18 @@ export function generateVLESSLink(node: Node): string {
       params.set('alpn', node.config.tlsSettings.alpn.join(','));
     }
   } else if (node.config.tls === 'reality') {
+    const reality = node.config.realitySettings;
+    if (!reality?.publicKey) return '';
     params.set('security', 'reality');
-    if (node.config.realitySettings) {
-      const reality = node.config.realitySettings;
-      if (reality.serverNames[0]) {
-        params.set('sni', reality.serverNames[0]);
-      }
-      if (reality.publicKey) {
-        params.set('pbk', reality.publicKey);
-      }
-      if (reality.shortId) {
-        params.set('sid', reality.shortId);
-      }
-      if (reality.spiderX) {
-        params.set('spx', reality.spiderX);
-      }
+    if (reality.serverNames?.[0]) {
+      params.set('sni', reality.serverNames[0]);
+    }
+    params.set('pbk', reality.publicKey);
+    if (reality.shortId) {
+      params.set('sid', reality.shortId);
+    }
+    if (reality.spiderX) {
+      params.set('spx', reality.spiderX);
     }
   } else {
     params.set('security', 'none');

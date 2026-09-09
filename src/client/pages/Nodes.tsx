@@ -394,7 +394,9 @@ export default function Nodes() {
       <Modal title={`节点二维码 - ${selectedNode?.name}`} open={qrModalOpen} onCancel={() => setQrModalOpen(false)} footer={null} width={400}>
         {selectedNode?.shareLink && (
           <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <QRCode value={selectedNode.shareLink} size={256} />
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+              <QRCode value={selectedNode.shareLink} size={256} />
+            </div>
             <Paragraph copyable style={{ marginTop: 16, wordBreak: 'break-all', fontSize: 12 }}>{selectedNode.shareLink}</Paragraph>
             <Button type="primary" icon={<CopyOutlined />} onClick={() => copyLink(selectedNode.shareLink!)} style={{ marginTop: 8 }}>复制链接</Button>
           </div>
