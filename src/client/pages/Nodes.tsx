@@ -187,8 +187,8 @@ export default function Nodes() {
   const columns = [
     { title: '名称', dataIndex: 'name', key: 'name' },
     { title: '协议', dataIndex: 'protocol', key: 'protocol', render: (p: string) => <Tag color={protocolColors[p]}>{protocolNames[p] || p}</Tag> },
+    { title: '入站地址', dataIndex: 'listen', key: 'listen', render: (l: string) => l || '0.0.0.0' },
     { title: '端口', dataIndex: 'port', key: 'port' },
-    { title: '监听地址', dataIndex: 'listen', key: 'listen', render: (l: string) => l || '0.0.0.0' },
     { title: '备注', dataIndex: 'remark', key: 'remark', ellipsis: true, render: (remark: string) => remark || '-' },
     {
       title: '状态', dataIndex: 'enabled', key: 'enabled',
@@ -230,8 +230,8 @@ export default function Nodes() {
         {nodes.map((node) => (
           <div className="mobile-card" key={node.id}>
             <div className="mobile-card-title"><span>{node.name}</span><Tag color={protocolColors[node.protocol]}>{protocolNames[node.protocol] || node.protocol}</Tag></div>
+            <div className="mobile-card-row"><span className="mobile-card-label">入站地址</span><span className="mobile-card-value">{node.listen || '0.0.0.0'}</span></div>
             <div className="mobile-card-row"><span className="mobile-card-label">端口</span><span className="mobile-card-value">{node.port}</span></div>
-            <div className="mobile-card-row"><span className="mobile-card-label">监听地址</span><span className="mobile-card-value">{node.listen || '0.0.0.0'}</span></div>
             <div className="mobile-card-row"><span className="mobile-card-label">备注</span><span className="mobile-card-value">{node.remark || '-'}</span></div>
             <div className="mobile-card-row"><span className="mobile-card-label">状态</span><Switch checked={node.enabled} onChange={(value) => handleToggle(node.id, value)} checkedChildren="启用" unCheckedChildren="禁用" /></div>
             <div className="mobile-card-actions">
