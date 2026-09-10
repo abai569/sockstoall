@@ -28,7 +28,8 @@ export default function Settings() {
     try {
       const res = await authApi.updateSiteConfig(values.title);
       if (res.data.success) {
-        message.success('标题修改成功，刷新页面后生效');
+        window.dispatchEvent(new CustomEvent('site-title-changed', { detail: values.title }));
+        message.success('标题修改成功');
       } else {
         message.error(res.data.error || '修改失败');
       }

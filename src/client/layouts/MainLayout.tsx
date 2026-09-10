@@ -55,6 +55,15 @@ export default function MainLayout() {
     }
   };
 
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const title = (e as CustomEvent).detail;
+      if (title) setSiteTitle(title);
+    };
+    window.addEventListener('site-title-changed', handler);
+    return () => window.removeEventListener('site-title-changed', handler);
+  }, []);
+
   const handleMenuClick = (e: { key: string }) => {
     navigate(e.key);
     setMobileMenuOpen(false);
