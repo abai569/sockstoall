@@ -97,24 +97,25 @@ export default function MainLayout() {
       </Sider>
       <Layout>
         <Header className="app-header" style={{
-          padding: '0 24px', 
+          padding: '0 24px',
           background: colorBgContainer,
           display: 'flex',
-          justifyContent: 'space-between',
           alignItems: 'center',
         }}>
           <Button className="mobile-menu-button" type="text" icon={<MenuOutlined />} onClick={() => setMobileMenuOpen(true)} />
-          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-            <Button type="text" icon={<UserOutlined />}>
-              {username || '用户'} <DownOutlined style={{ fontSize: 12 }} />
-            </Button>
-          </Dropdown>
+          <div style={{ marginLeft: 'auto' }}>
+            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+              <Button type="text" icon={<UserOutlined />}>
+                {username || '用户'} <DownOutlined style={{ fontSize: 12 }} />
+              </Button>
+            </Dropdown>
+          </div>
         </Header>
         <Content className="app-content" style={{ margin: 24, padding: 24, background: colorBgContainer, borderRadius: 8 }}>
           <Outlet />
         </Content>
       </Layout>
-      <Drawer title="SocksToAll" placement="left" open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} styles={{ body: { padding: 0 } }}>
+      <Drawer title="SocksToAll" placement="left" open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} width={200} styles={{ body: { padding: 0 }, header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } }} closeIcon={<span style={{ fontSize: 18 }}>✕</span>}>
         <Menu mode="inline" selectedKeys={[getSelectedKey()]} items={menuItems} onClick={handleMenuClick} />
       </Drawer>
     </Layout>
