@@ -53,3 +53,13 @@ export async function updateUserPassword(username: string, newPasswordHash: stri
   await saveUsers(users);
   return true;
 }
+
+export async function renameUser(oldUsername: string, newUsername: string): Promise<boolean> {
+  const users = await getUsers();
+  const index = users.findIndex(u => u.username === oldUsername);
+  if (index === -1) return false;
+  
+  users[index].username = newUsername;
+  await saveUsers(users);
+  return true;
+}

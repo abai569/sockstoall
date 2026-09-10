@@ -178,6 +178,18 @@ export interface ChangePasswordRequest {
   newPassword: string;
 }
 
+/** 修改用户名和密码请求 */
+export interface ChangeAccountRequest {
+  oldPassword: string;
+  newUsername?: string;
+  newPassword?: string;
+}
+
+/** 站点配置 */
+export interface SiteConfig {
+  title: string;
+}
+
 // ==================== Xray 相关 ====================
 
 /** Xray 状态 */

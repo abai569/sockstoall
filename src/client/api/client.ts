@@ -28,7 +28,11 @@ export const authApi = {
     api.post('/auth/login', { username, password }),
   changePassword: (oldPassword: string, newPassword: string) =>
     api.post('/auth/change-password', { oldPassword, newPassword }),
+  changeAccount: (data: { oldPassword: string; newUsername?: string; newPassword?: string }) =>
+    api.post('/auth/change-account', data),
   getMe: () => api.get('/auth/me'),
+  getSiteConfig: () => api.get('/auth/site-config'),
+  updateSiteConfig: (title: string) => api.put('/auth/site-config', { title }),
 };
 
 export const nodeApi = {

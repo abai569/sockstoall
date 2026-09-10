@@ -1,5 +1,5 @@
-import { Layout, Menu, Button, Dropdown, theme, Drawer } from 'antd';
-import { useState } from 'react';
+import { Layout, Menu, Button, Dropdown, theme, Drawer, Modal, Form, Input, message } from 'antd';
+import { useState, useEffect } from 'react';
 import { 
   DashboardOutlined, 
   NodeIndexOutlined, 
@@ -14,10 +14,12 @@ import {
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { authApi } from '../api/client';
 
 declare const __APP_VERSION__: string;
 
 const { Header, Sider, Content } = Layout;
+const { Password } = Input;
 
 const menuItems = [
   { key: '/', icon: <DashboardOutlined />, label: '总览' },
@@ -30,9 +32,28 @@ const menuItems = [
 export default function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { username, logout } = useAuth();
+  const { username, login, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [changePwdOpen, setChangePwdOpen] = useState(false);
+  const [changePwdLoading, setChangePwdLoading] = useState(false);
+  const [siteTitle, setSiteTitle] = useState('SocksToAll');
+  const [changePwdForm] = Form.useForm();
   const { token: { colorBgContainer } } = theme.useToken();
+
+  useEffect(() => {
+    loadSiteTitle();
+  }, []);
+
+  const loadSiteTitle = async () => {
+    try {
+      const res = await authApi.getSiteConfig();
+      if (res.data.success) {
+        setSiteTitle(res.data.data.title);
+      }
+    } catch (error) {
+      console.error('Load site title error:', error);
+    }
+  };
 
   const handleMenuClick = (e: { key: string }) => {
     navigate(e.key);
@@ -45,12 +66,43 @@ export default function MainLayout() {
   };
 
   const userMenuItems = [
-    { key: 'settings', icon: <LockOutlined />, label: '修改密码', onClick: () => navigate('/settings') },
+    { key: 'change-pwd', icon: <LockOutlined />, label: '修改密码', onClick: () => { changePwdForm.resetFields(); setChangePwdOpen(true); } },
     { type: 'divider' as const, key: 'divider' },
     { key: 'logout', icon: <LogoutOutlined />, label: '退出登录', onClick: handleLogout },
   ];
 
-  // 获取当前选中的菜单项
+  const handleChangePwd = async () => {
+    try {
+      const values = await changePwdForm.validateFields();
+      if (values.newPassword !== values.confirmPassword) {
+        message.error('两次输入的密码不一致');
+        return;
+      }
+      setChangePwdLoading(true);
+      const res = await authApi.changeAccount({
+        oldPassword: values.oldPassword,
+        newUsername: values.newUsername || undefined,
+        newPassword: values.newPassword || undefined,
+      });
+      if (res.data.success) {
+        const { username: newUsername, token } = res.data.data;
+        if (token && newUsername) {
+          login(token, newUsername);
+        }
+        message.success('修改成功');
+        setChangePwdOpen(false);
+        changePwdForm.resetFields();
+      } else {
+        message.error(res.data.error || '修改失败');
+      }
+    } catch (error: any) {
+      if (error.errorFields) return;
+      message.error(error.response?.data?.error || '修改失败');
+    } finally {
+      setChangePwdLoading(false);
+    }
+  };
+
   const getSelectedKey = () => {
     const path = location.pathname;
     if (path === '/') return '/';
@@ -73,7 +125,7 @@ export default function MainLayout() {
           fontSize: 18,
           color: '#1890ff',
         }}>
-          SocksToAll
+          {siteTitle}
         </div>
         <Menu
           mode="inline"
@@ -115,9 +167,39 @@ export default function MainLayout() {
           <Outlet />
         </Content>
       </Layout>
-      <Drawer title="SocksToAll" placement="left" open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} width={200} closable={false} styles={{ body: { padding: 0 } }}>
+      <Drawer title={siteTitle} placement="left" open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} width={200} closable={false} styles={{ body: { padding: 0 } }}>
         <Menu mode="inline" selectedKeys={[getSelectedKey()]} items={menuItems} onClick={handleMenuClick} />
       </Drawer>
+
+      <Modal
+        title="修改密码"
+        open={changePwdOpen}
+        onCancel={() => {}}
+        footer={null}
+        closable={false}
+        maskClosable={false}
+        keyboard={false}
+        width={500}
+      >
+        <Form form={changePwdForm} layout="vertical" style={{ marginTop: 16 }}>
+          <Form.Item name="newUsername" label="新用户名" rules={[{ min: 3, message: '至少3位' }]}>
+            <Input placeholder="请输入新用户名（至少3位）" />
+          </Form.Item>
+          <Form.Item name="oldPassword" label="当前密码" rules={[{ required: true, message: '请输入当前密码' }]}>
+            <Password placeholder="请输入当前密码" />
+          </Form.Item>
+          <Form.Item name="newPassword" label="新密码" rules={[{ min: 6, message: '至少6位' }]}>
+            <Password placeholder="请输入新密码（至少6位）" />
+          </Form.Item>
+          <Form.Item name="confirmPassword" label="确认密码" rules={[{ required: true, message: '请再次输入新密码' }]}>
+            <Password placeholder="请再次输入新密码" />
+          </Form.Item>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 24 }}>
+            <Button onClick={() => { setChangePwdOpen(false); changePwdForm.resetFields(); }}>取消</Button>
+            <Button type="primary" onClick={handleChangePwd} loading={changePwdLoading}>确定</Button>
+          </div>
+        </Form>
+      </Modal>
     </Layout>
   );
 }
