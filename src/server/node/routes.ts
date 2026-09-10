@@ -13,6 +13,34 @@ import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
 
+let cachedPublicIp: string | null = null;
+
+function getPublicIPv4(): string {
+  if (cachedPublicIp) return cachedPublicIp;
+  const urls = [
+    'https://api4.ipify.org',
+    'https://ipv4.icanhazip.com',
+    'https://v4.ident.me',
+  ];
+  for (const url of urls) {
+    try {
+      const ip = execSync(`curl -fsSL --max-time 3 "${url}" 2>/dev/null || wget -qO- --timeout=3 "${url}" 2>/dev/null`, { timeout: 5000, encoding: 'utf-8' }).trim();
+      if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
+        cachedPublicIp = ip;
+        return ip;
+      }
+    } catch { /* ignore */ }
+  }
+  return '127.0.0.1';
+}
+
+function resolveListenAddress(listen?: string): string {
+  if (!listen || listen === '0.0.0.0' || listen === '::') {
+    return getPublicIPv4();
+  }
+  return listen;
+}
+
 export const nodeRoutes = new Hono();
 
 const ROOT_DIR = process.cwd();
@@ -116,6 +144,7 @@ nodeRoutes.get('/', (c) => {
   const nodes = getNodes();
   const nodesWithLinks = nodes.map(node => ({
     ...node,
+    listen: resolveListenAddress(node.listen),
     shareLink: generateShareLink(node)
   }));
   const response: ListResponse<any> = { items: nodesWithLinks, total: nodesWithLinks.length };
@@ -133,7 +162,7 @@ nodeRoutes.get('/:id', (c) => {
   
   return c.json<ApiResponse<any>>({ 
     success: true, 
-    data: { ...node, shareLink: generateShareLink(node) } 
+    data: { ...node, listen: resolveListenAddress(node.listen), shareLink: generateShareLink(node) } 
   });
 });
 
