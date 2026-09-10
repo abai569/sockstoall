@@ -115,7 +115,7 @@ export default function MainLayout() {
           <Outlet />
         </Content>
       </Layout>
-      <Drawer title="SocksToAll" placement="left" open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} width={200} styles={{ body: { padding: 0 }, header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } }} closeIcon={<span style={{ fontSize: 18 }}>✕</span>}>
+      <Drawer title="SocksToAll" placement="left" open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} width={200} closable={false} styles={{ body: { padding: 0 } }}>
         <Menu mode="inline" selectedKeys={[getSelectedKey()]} items={menuItems} onClick={handleMenuClick} />
       </Drawer>
     </Layout>
