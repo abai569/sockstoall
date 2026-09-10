@@ -158,11 +158,23 @@ export default function RouteList() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div className="page-toolbar" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
         <Title level={4} style={{ margin: 0 }}>转发规则</Title>
         <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>创建规则</Button>
       </div>
-      <Table loading={loading} columns={columns} dataSource={routes} rowKey="id" pagination={{ pageSize: 10 }} />
+      <div className="desktop-data-table"><Table loading={loading} columns={columns} dataSource={routes} rowKey="id" pagination={{ pageSize: 10 }} /></div>
+      <div className="mobile-card-list">
+        {routes.map((route) => {
+          const node = nodes.find((item) => item.id === route.nodeId);
+          return <div className="mobile-card" key={route.id}>
+            <div className="mobile-card-title"><span>{route.name}</span><Switch checked={route.enabled} onChange={(value) => handleToggle(route.id, value)} /></div>
+            <div className="mobile-card-row"><span className="mobile-card-label">入站节点</span><span className="mobile-card-value">{node ? `${node.name} (${node.protocol}:${node.port})` : '节点已删除'}</span></div>
+            <div className="mobile-card-row"><span className="mobile-card-label">出站 SOCKS</span><span className="mobile-card-value">{route.outbound.address}:{route.outbound.port}</span></div>
+            <div className="mobile-card-row"><span className="mobile-card-label">备注</span><span className="mobile-card-value">{route.remark || '-'}</span></div>
+            <div className="mobile-card-actions"><Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(route)}>编辑</Button><Popconfirm title="确定删除？" onConfirm={() => handleDelete(route.id)} okText="确定" cancelText="取消"><Button type="link" danger size="small" icon={<DeleteOutlined />}>删除</Button></Popconfirm></div>
+          </div>;
+        })}
+      </div>
 
       {/* 创建/编辑弹窗 */}
       <Modal
@@ -174,6 +186,7 @@ export default function RouteList() {
           setLinkValue('');
         }}
         confirmLoading={submitting}
+        className="mobile-modal"
         width={500}
         okText={editId ? '保存' : '创建'}
       >

@@ -1,4 +1,5 @@
-import { Layout, Menu, Button, Dropdown, theme } from 'antd';
+import { Layout, Menu, Button, Dropdown, theme, Drawer } from 'antd';
+import { useState } from 'react';
 import { 
   DashboardOutlined, 
   NodeIndexOutlined, 
@@ -9,6 +10,7 @@ import {
   LogoutOutlined,
   LockOutlined,
   DownOutlined,
+  MenuOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -29,10 +31,12 @@ export default function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { username, logout } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { token: { colorBgContainer } } = theme.useToken();
 
   const handleMenuClick = (e: { key: string }) => {
     navigate(e.key);
+    setMobileMenuOpen(false);
   };
 
   const handleLogout = () => {
@@ -59,7 +63,7 @@ export default function MainLayout() {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider breakpoint="lg" collapsedWidth="80" theme="light">
+      <Sider className="desktop-sider" breakpoint="lg" collapsedWidth="80" theme="light">
         <div style={{ 
           height: 64, 
           display: 'flex', 
@@ -92,23 +96,27 @@ export default function MainLayout() {
         </div>
       </Sider>
       <Layout>
-        <Header style={{ 
+        <Header className="app-header" style={{
           padding: '0 24px', 
           background: colorBgContainer,
           display: 'flex',
-          justifyContent: 'flex-end',
+          justifyContent: 'space-between',
           alignItems: 'center',
         }}>
+          <Button className="mobile-menu-button" type="text" icon={<MenuOutlined />} onClick={() => setMobileMenuOpen(true)} />
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
             <Button type="text" icon={<UserOutlined />}>
               {username || '用户'} <DownOutlined style={{ fontSize: 12 }} />
             </Button>
           </Dropdown>
         </Header>
-        <Content style={{ margin: 24, padding: 24, background: colorBgContainer, borderRadius: 8 }}>
+        <Content className="app-content" style={{ margin: 24, padding: 24, background: colorBgContainer, borderRadius: 8 }}>
           <Outlet />
         </Content>
       </Layout>
+      <Drawer title="SocksToAll" placement="left" open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} styles={{ body: { padding: 0 } }}>
+        <Menu mode="inline" selectedKeys={[getSelectedKey()]} items={menuItems} onClick={handleMenuClick} />
+      </Drawer>
     </Layout>
   );
 }

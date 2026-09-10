@@ -218,14 +218,30 @@ export default function Nodes() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div className="page-toolbar" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
         <Title level={4} style={{ margin: 0 }}>节点管理</Title>
         <Space>
           <Button icon={<LinkOutlined />} onClick={() => setImportModalOpen(true)}>导入链接</Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>创建节点</Button>
         </Space>
       </div>
-      <Table loading={loading} columns={columns} dataSource={nodes} rowKey="id" pagination={{ pageSize: 10 }} />
+      <div className="desktop-data-table"><Table loading={loading} columns={columns} dataSource={nodes} rowKey="id" pagination={{ pageSize: 10 }} /></div>
+      <div className="mobile-card-list">
+        {nodes.map((node) => (
+          <div className="mobile-card" key={node.id}>
+            <div className="mobile-card-title"><span>{node.name}</span><Tag color={protocolColors[node.protocol]}>{protocolNames[node.protocol] || node.protocol}</Tag></div>
+            <div className="mobile-card-row"><span className="mobile-card-label">端口</span><span className="mobile-card-value">{node.port}</span></div>
+            <div className="mobile-card-row"><span className="mobile-card-label">监听地址</span><span className="mobile-card-value">{node.listen || '0.0.0.0'}</span></div>
+            <div className="mobile-card-row"><span className="mobile-card-label">备注</span><span className="mobile-card-value">{node.remark || '-'}</span></div>
+            <div className="mobile-card-row"><span className="mobile-card-label">状态</span><Switch checked={node.enabled} onChange={(value) => handleToggle(node.id, value)} checkedChildren="启用" unCheckedChildren="禁用" /></div>
+            <div className="mobile-card-actions">
+              {node.shareLink && <Button size="small" icon={<QrcodeOutlined />} onClick={() => { setSelectedNode(node); setQrModalOpen(true); }}>二维码</Button>}
+              <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(node)}>编辑</Button>
+              <Popconfirm title="确定删除？" onConfirm={() => handleDelete(node.id)} okText="确定" cancelText="取消"><Button size="small" danger icon={<DeleteOutlined />}>删除</Button></Popconfirm>
+            </div>
+          </div>
+        ))}
+      </div>
 
       {/* 创建/编辑弹窗 */}
       <Modal
@@ -234,6 +250,7 @@ export default function Nodes() {
         onOk={handleSubmit}
         onCancel={() => setModalOpen(false)}
         confirmLoading={submitting}
+        className="mobile-modal"
         width={600}
         okText={editId ? '保存' : '创建'}
       >
