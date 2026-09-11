@@ -256,7 +256,7 @@ orderRoutes.post('/orders/:id/cancel', (c) => {
 orderRoutes.post('/orders/:id/pay', async (c) => {
   const userId = (c as any).get('userId') as number;
   const id = parseInt(c.req.param('id'));
-  
+
   const order = db.query.orders.findFirst({
     where: and(
       eq(orders.id, id),
@@ -264,22 +264,26 @@ orderRoutes.post('/orders/:id/pay', async (c) => {
       eq(orders.status, 0)
     ),
   });
-  
+
   if (!order) {
     return c.json({ success: false, error: '订单不存在或已处理' }, 404);
   }
-  
-  // TODO: 集成支付网关，生成支付 URL/二维码
-  // 这里先返回模拟数据
-  return c.json({ 
-    success: true, 
-    data: {
-      payUrl: `https://payment.example.com/pay?order=${order.orderNo}`,
-      qrContent: order.orderNo,
-      payAmount: (order.amount / 100).toFixed(2),
-      expiresAt: order.payExpiresAt,
-    }
-  });
+
+  const { getPaymentGateway } = await import('./payment-gateway.js');
+  const gateway = getPaymentGateway(order.payCurrency);
+
+  if (!gateway) {
+    return c.json({ success: false, error: '支付渠道未配置或已禁用' }, 400);
+  }
+
+  try {
+    const payType = order.payCurrency === 'USDT' ? (c.req.query('network') || 'tron') : undefined;
+    const result = await gateway.createInvoice(order.orderNo, order.amount, order.packageName, payType);
+    return c.json({ success: true, data: result });
+  } catch (error: any) {
+    console.error('Create invoice error:', error);
+    return c.json({ success: false, error: error.message || '创建支付单失败' }, 500);
+  }
 });
 
 // ==================== 管理员接口 ====================
