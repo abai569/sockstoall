@@ -11,6 +11,9 @@ import {
   LockOutlined,
   DownOutlined,
   MenuOutlined,
+  ShoppingCartOutlined,
+  OrderedListOutlined,
+  ShopOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -25,7 +28,11 @@ const menuItems = [
   { key: '/', icon: <DashboardOutlined />, label: '总览' },
   { key: '/nodes', icon: <NodeIndexOutlined />, label: '节点管理' },
   { key: '/routes', icon: <SwapOutlined />, label: '转发规则' },
+  { key: '/shop', icon: <ShoppingCartOutlined />, label: '商城' },
+  { key: '/orders', icon: <OrderedListOutlined />, label: '我的订单' },
   { key: '/logs', icon: <FileTextOutlined />, label: '实时日志' },
+  { key: '/admin/packages', icon: <ShopOutlined />, label: '套餐管理' },
+  { key: '/admin/orders', icon: <OrderedListOutlined />, label: '订单管理' },
   { key: '/settings', icon: <SettingOutlined />, label: '设置' },
 ];
 
@@ -117,6 +124,10 @@ export default function MainLayout() {
     if (path === '/') return '/';
     if (path.startsWith('/nodes')) return '/nodes';
     if (path.startsWith('/routes')) return '/routes';
+    if (path.startsWith('/shop')) return '/shop';
+    if (path.startsWith('/orders')) return '/orders';
+    if (path.startsWith('/admin/packages')) return '/admin/packages';
+    if (path.startsWith('/admin/orders')) return '/admin/orders';
     if (path.startsWith('/logs')) return '/logs';
     if (path.startsWith('/settings')) return '/settings';
     return '/';

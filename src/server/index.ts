@@ -16,12 +16,13 @@ import { nodeRoutes } from './node/routes.js';
 import { linkRoutes } from './node/link-routes.js';
 import { routeRoutes } from './route/routes.js';
 import { xrayRoutes } from './xray/routes.js';
-import { shopRoutes } from './shop/routes.js';
+import { shopRoutes } from './shop/index.js';
 import { initWebSocket } from './xray/ws-log.js';
 import { xrayService } from './xray/service.js';
 import { getNodes, getNodeById } from './node/node-store.js';
 import { getRoutes } from './route/route-store.js';
 import { initDatabase } from './db/index.js';
+import { runAutoRenewCheck, runAutoBuyTrafficCheck, cleanupExpiredOrders } from './shop/jobs.js';
 
 const app = new Hono();
 const PORT = parseInt(process.env.PORT || '3456');
@@ -44,6 +45,9 @@ app.use('/api/link/*', authMiddleware);
 app.use('/api/nodes/*', authMiddleware);
 app.use('/api/routes/*', authMiddleware);
 app.use('/api/xray/*', authMiddleware);
+app.use('/api/shop/orders/*', authMiddleware);
+app.use('/api/shop/balance/*', authMiddleware);
+app.use('/api/shop/admin/*', authMiddleware);
 
 app.route('/api/link', linkRoutes);
 app.route('/api/nodes', nodeRoutes);
@@ -76,6 +80,12 @@ initWebSocket(server as any);
 
 // 初始化数据库
 initDatabase();
+
+// 启动定时任务
+console.log('Starting scheduled jobs...');
+setInterval(() => runAutoRenewCheck(), 60 * 1000);  // 每分钟检查自动续费
+setInterval(() => runAutoBuyTrafficCheck(), 10 * 60 * 1000);  // 每 10 分钟检查自动购买流量
+setInterval(() => cleanupExpiredOrders(), 60 * 60 * 1000);  // 每小时清理过期订单
 
 // 启动服务器
 server.listen(PORT, () => {

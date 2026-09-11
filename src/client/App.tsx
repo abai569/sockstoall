@@ -7,6 +7,10 @@ import Nodes from './pages/Nodes';
 import RouteList from './pages/RouteList';
 import Logs from './pages/Logs';
 import Settings from './pages/Settings';
+import Shop from './pages/Shop';
+import Orders from './pages/Orders';
+import AdminPackages from './pages/AdminPackages';
+import AdminOrders from './pages/AdminOrders';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
@@ -31,6 +35,10 @@ function App() {
             <Route path="nodes" element={<Nodes />} />
             <Route path="routes" element={<RouteList />} />
             <Route path="logs" element={<Logs />} />
+            <Route path="shop" element={<Shop />} />
+            <Route path="orders" element={<Orders />} />
+            <Route path="admin/packages" element={<AdminPackages />} />
+            <Route path="admin/orders" element={<AdminOrders />} />
             <Route path="settings" element={<Settings />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
