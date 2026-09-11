@@ -16,10 +16,12 @@ import { nodeRoutes } from './node/routes.js';
 import { linkRoutes } from './node/link-routes.js';
 import { routeRoutes } from './route/routes.js';
 import { xrayRoutes } from './xray/routes.js';
+import { shopRoutes } from './shop/routes.js';
 import { initWebSocket } from './xray/ws-log.js';
 import { xrayService } from './xray/service.js';
 import { getNodes, getNodeById } from './node/node-store.js';
 import { getRoutes } from './route/route-store.js';
+import { initDatabase } from './db/index.js';
 
 const app = new Hono();
 const PORT = parseInt(process.env.PORT || '3456');
@@ -47,6 +49,7 @@ app.route('/api/link', linkRoutes);
 app.route('/api/nodes', nodeRoutes);
 app.route('/api/routes', routeRoutes);
 app.route('/api/xray', xrayRoutes);
+app.route('/api/shop', shopRoutes);
 
 // 健康检查
 app.get('/api/health', (c) => {
@@ -70,6 +73,9 @@ const server = createAdaptorServer({ fetch: app.fetch });
 
 // 初始化 WebSocket
 initWebSocket(server as any);
+
+// 初始化数据库
+initDatabase();
 
 // 启动服务器
 server.listen(PORT, () => {
