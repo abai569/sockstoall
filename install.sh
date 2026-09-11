@@ -139,10 +139,6 @@ download_release() {
     tar -xzf "$tmp/sockstoall.tar.gz" -C "$INSTALL_DIR"
     rm -rf "$tmp"
 
-    log_info "Installing production dependencies..."
-    cd "$INSTALL_DIR"
-    npm install --omit=dev 2>/dev/null || true
-
     log_info "Release ${tag} installed"
     return 0
 }
