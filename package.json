@@ -1,6 +1,6 @@
 {
   "name": "sockstoall",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "多协议代理节点管理 + SOCKS 转发面板",
   "type": "module",
   "scripts": {
@@ -8,7 +8,7 @@
     "dev:server": "tsx watch src/server/index.ts",
     "dev:client": "vite",
     "build": "tsc && vite build && tsc -p tsconfig.server.json",
-    "build:server": "esbuild src/server/index.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/server.mjs --banner:js=\"import{createRequire}from'module';import{fileURLToPath}from'url';import{dirname}from'path';const require=createRequire(import.meta.url);const __filename=fileURLToPath(import.meta.url);const __dirname=dirname(__filename);\"",
+    "build:server": "esbuild src/server/index.ts --bundle --platform=node --target=node20 --format=esm --outfile=dist/server.mjs --banner:js=\"import{createRequire}from'module';import{fileURLToPath}from'url';import{dirname}from'path';const require=createRequire(import.meta.url);const __filename=fileURLToPath(import.meta.url);const __dirname=dirname(__filename);\" --external:better-sqlite3",
     "build:release": "vite build && npm run build:server",
     "start": "node dist/server.mjs",
     "install:all": "tsx scripts/install.ts"
