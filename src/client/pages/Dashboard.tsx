@@ -169,9 +169,11 @@ export default function Dashboard() {
       
       <Card title="快捷操作" style={{ marginTop: 24 }}>
         <Space wrap>
-          <Tag color="blue" style={{ cursor: 'pointer', padding: '8px 16px' }} onClick={() => navigate('/nodes')}>创建节点</Tag>
-          <Tag color="purple" style={{ cursor: 'pointer', padding: '8px 16px' }} onClick={() => navigate('/routes')}>创建规则</Tag>
-          <Tag color="cyan" style={{ cursor: 'pointer', padding: '8px 16px' }} onClick={() => navigate('/logs')}>查看日志</Tag>
+          <Tag color="blue" style={{ cursor: 'pointer', padding: '8px 16px' }} onClick={() => navigate('/nodes')}>创建入站</Tag>
+          <Tag color="purple" style={{ cursor: 'pointer', padding: '8px 16px' }} onClick={() => navigate('/routes')}>创建出站</Tag>
+          {isAdmin && (
+            <Tag color="cyan" style={{ cursor: 'pointer', padding: '8px 16px' }} onClick={() => navigate('/logs')}>查看日志</Tag>
+          )}
         </Space>
       </Card>
     </div>

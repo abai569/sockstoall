@@ -64,17 +64,21 @@ export default function AdminServers() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+    const timer = setInterval(() => loadData(true), 10000);
+    return () => clearInterval(timer);
+  }, []);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const res = await api.get('/server/servers');
       setServers(res.data.data || []);
     } catch (error) {
-      message.error('加载服务器列表失败');
+      if (!silent) message.error('加载服务器列表失败');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 

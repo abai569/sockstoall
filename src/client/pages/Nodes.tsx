@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Table, Button, Space, Tag, Popconfirm, message, Typography, Modal, Input, QRCode, Switch, Form, Select, InputNumber, Divider, Row, Col } from 'antd';
-import { nodeApi, linkApi, api, authApi } from '../api/client';
+import { nodeApi, api, authApi } from '../api/client';
 import type { NodeProtocol } from '../../shared/types';
 
 const { Title, Paragraph } = Typography;
@@ -67,9 +67,6 @@ export default function Nodes() {
   const [protocol, setProtocol] = useState<NodeProtocol>('shadowsocks');
   const [tlsType, setTlsType] = useState('none');
   const [transport, setTransport] = useState('tcp');
-  const [importModalOpen, setImportModalOpen] = useState(false);
-  const [importLink, setImportLink] = useState('');
-  const [importing, setImporting] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [selectedNode, setSelectedNode] = useState<NodeWithLink | null>(null);
   const [servers, setServers] = useState<any[]>([]);
@@ -183,20 +180,6 @@ export default function Nodes() {
     } finally { setSubmitting(false); }
   };
 
-  const handleImport = async () => {
-    if (!importLink.trim()) { message.warning('请输入链接'); return; }
-    setImporting(true);
-    try {
-      const res = await linkApi.parse(importLink);
-      if (res.data.success) {
-        await nodeApi.create(res.data.data.config);
-        message.success('导入成功');
-        setImportModalOpen(false); setImportLink(''); loadData();
-      } else { message.error(res.data.error || '解析失败'); }
-    } catch (error: any) { message.error(error.response?.data?.error || '导入失败'); }
-    finally { setImporting(false); }
-  };
-
   const copyLink = (link: string) => {
     navigator.clipboard.writeText(link).then(() => message.success('链接已复制')).catch(() => message.error('复制失败'));
   };
@@ -255,7 +238,6 @@ export default function Nodes() {
             onChange={(v) => setFilterServerId(v)}
             options={[{ value: 'all', label: '全部服务器' }, ...servers.map(s => ({ value: s.id, label: s.name }))]}
           />
-          <Button onClick={() => setImportModalOpen(true)}>导入链接</Button>
           <Button type="primary" onClick={openCreate}>创建规则</Button>
         </Space>
       </div>
@@ -447,12 +429,6 @@ export default function Nodes() {
             </>
           )}
         </Form>
-      </Modal>
-
-      {/* 导入弹窗 */}
-      <Modal title="导入分享链接" open={importModalOpen} onOk={handleImport} onCancel={() => { setImportModalOpen(false); setImportLink(''); }} confirmLoading={importing} okText="导入">
-        <p style={{ marginBottom: 12, color: '#666' }}>支持 ss:// vmess:// vless:// 格式</p>
-        <Input.TextArea rows={4} value={importLink} onChange={(e) => setImportLink(e.target.value)} placeholder="粘贴分享链接..." />
       </Modal>
 
       {/* 二维码弹窗 */}

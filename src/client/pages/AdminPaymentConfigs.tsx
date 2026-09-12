@@ -29,6 +29,21 @@ export default function AdminPaymentConfigs() {
     }
   };
 
+  const applyCallbackDefaults = (ch: string) => {
+    const origin = window.location.origin;
+    if (ch === 'YIPAY') {
+      form.setFieldsValue({
+        notify_url: `${origin}/api/shop/callback/yipay`,
+        return_url: `${origin}/orders`,
+      });
+    } else if (ch === 'USDT') {
+      form.setFieldsValue({
+        notify_url: `${origin}/api/shop/callback/usdt`,
+        return_url: `${origin}/orders`,
+      });
+    }
+  };
+
   const openCreate = () => {
     setEditing(null);
     setChannel('');
@@ -186,7 +201,14 @@ export default function AdminPaymentConfigs() {
           <Row gutter={[16, 0]}>
             <Col xs={16} sm={16}>
               <Form.Item name="channel" label="支付渠道" rules={[{ required: true }]} extra={editing ? '不可修改' : ''}>
-                <Select options={CHANNELS} disabled={!!editing} onChange={(v) => setChannel(v)} />
+                <Select
+                  options={CHANNELS}
+                  disabled={!!editing}
+                  onChange={(v) => {
+                    setChannel(v);
+                    if (!editing) applyCallbackDefaults(v);
+                  }}
+                />
               </Form.Item>
             </Col>
             <Col xs={8} sm={8}>
