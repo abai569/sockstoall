@@ -213,7 +213,42 @@ start_service() {
     systemctl status sockstoall --no-pager
 }
 
+uninstall_sockstoall() {
+    local purge="$1"
+
+    log_info "Uninstalling SocksToAll..."
+
+    systemctl disable --now sockstoall 2>/dev/null || true
+    rm -f /etc/systemd/system/sockstoall.service
+    systemctl daemon-reload 2>/dev/null || true
+    systemctl reset-failed sockstoall 2>/dev/null || true
+
+    if command -v docker &>/dev/null; then
+        if [ -f "$COMPOSE_FILE" ]; then
+            docker compose -f "$COMPOSE_FILE" down 2>/dev/null || docker-compose -f "$COMPOSE_FILE" down 2>/dev/null || true
+        fi
+        docker rm -f sockstoall 2>/dev/null || true
+        docker volume rm sockstoall_bin 2>/dev/null || true
+    fi
+
+    if [ "$purge" = "--purge" ]; then
+        rm -rf "$INSTALL_DIR"
+        log_info "Removed $INSTALL_DIR and all data"
+    else
+        rm -f "$COMPOSE_FILE"
+        log_info "Service removed. Data kept at $INSTALL_DIR/data"
+        log_info "To remove everything: rm -rf $INSTALL_DIR"
+    fi
+
+    echo -e "${GREEN}Uninstall complete${NC}"
+}
+
 main() {
+    if [ "$1" = "uninstall" ]; then
+        uninstall_sockstoall "$2"
+        exit 0
+    fi
+
     echo -e "${BLUE}"
     echo "==========================================================="
     echo "   SocksToAll Installer"
@@ -242,7 +277,8 @@ main() {
     echo -e "  Commands:"
     echo -e "    systemctl start|stop|restart sockstoall"
     echo -e "    journalctl -u sockstoall -f"
-    echo ""
+    echo -e "    Uninstall: bash install.sh uninstall [--purge]"
+    echo -e ""
 }
 
 main "$@"

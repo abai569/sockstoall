@@ -27,6 +27,17 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
+if [ "$1" = "uninstall" ]; then
+  echo "[INFO] Uninstalling SocksToAll Agent..."
+  systemctl disable --now sockstoall-agent 2>/dev/null || true
+  rm -f /etc/systemd/system/sockstoall-agent.service
+  systemctl daemon-reload 2>/dev/null || true
+  systemctl reset-failed sockstoall-agent 2>/dev/null || true
+  rm -rf "$AGENT_DIR"
+  echo "[INFO] SocksToAll Agent uninstalled"
+  exit 0
+fi
+
 echo "[INFO] Installing SocksToAll Agent..."
 
 # 1. base deps
@@ -95,10 +106,24 @@ SERVICE
 systemctl daemon-reload
 systemctl enable --now sockstoall-agent
 systemctl restart sockstoall-agent
+
+# 7. uninstall script
+cat > "$AGENT_DIR/uninstall.sh" <<'UNINSTALL'
+#!/bin/bash
+systemctl disable --now sockstoall-agent 2>/dev/null || true
+rm -f /etc/systemd/system/sockstoall-agent.service
+systemctl daemon-reload 2>/dev/null || true
+systemctl reset-failed sockstoall-agent 2>/dev/null || true
+rm -rf /opt/sockstoall-agent
+echo "SocksToAll Agent uninstalled"
+UNINSTALL
+chmod +x "$AGENT_DIR/uninstall.sh"
+
 sleep 2
 systemctl status sockstoall-agent --no-pager || true
 
 echo "[INFO] SocksToAll Agent installed"
+echo "[INFO] Uninstall: bash $AGENT_DIR/uninstall.sh"
 `;
 }
 

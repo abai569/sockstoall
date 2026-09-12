@@ -30,6 +30,10 @@ function buildInstallCommand(baseUrl: string, token: string): string {
   return `curl -fsSL "${baseUrl}/api/agent/install.sh?token=${token}" | bash`;
 }
 
+function buildUninstallCommand(baseUrl: string, token: string): string {
+  return `curl -fsSL "${baseUrl}/api/agent/install.sh?token=${token}" | bash -s -- uninstall`;
+}
+
 // 获取服务器列表（管理员）
 serverRoutes.get('/servers', (c) => {
   const list = db.query.servers.findMany({
@@ -52,6 +56,7 @@ serverRoutes.get('/servers', (c) => {
     arch: server.arch,
     nodeCount: nodes.filter(n => (n.serverId ?? 1) === server.id).length,
     installCommand: server.isLocal === 1 ? null : buildInstallCommand(baseUrl, server.agentToken),
+    uninstallCommand: server.isLocal === 1 ? null : buildUninstallCommand(baseUrl, server.agentToken),
     createdAt: server.createdAt,
   }));
 

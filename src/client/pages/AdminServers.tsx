@@ -9,7 +9,7 @@ export default function AdminServers() {
   const [loading, setLoading] = useState(true);
   const [servers, setServers] = useState<any[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [installModal, setInstallModal] = useState<{ open: boolean; command: string }>({ open: false, command: '' });
+  const [installModal, setInstallModal] = useState<{ open: boolean; command: string; title: string }>({ open: false, command: '', title: '安装' });
   const [form] = Form.useForm();
 
   useEffect(() => { loadData(); }, []);
@@ -36,7 +36,7 @@ export default function AdminServers() {
         form.resetFields();
         loadData();
         if (res.data.data?.installCommand) {
-          setInstallModal({ open: true, command: res.data.data.installCommand });
+          setInstallModal({ open: true, command: res.data.data.installCommand, title: '安装' });
         }
       } else {
         message.error(res.data.error || '创建失败');
@@ -63,7 +63,7 @@ export default function AdminServers() {
       if (res.data.success) {
         message.success('Token 已重置，请重新安装 Agent');
         loadData();
-        setInstallModal({ open: true, command: res.data.data.installCommand });
+        setInstallModal({ open: true, command: res.data.data.installCommand, title: '安装' });
       }
     } catch (error: any) {
       message.error(error.response?.data?.error || '操作失败');
@@ -96,7 +96,10 @@ export default function AdminServers() {
       render: (_: any, record: any) => (
         <>
           {!record.isLocal && (
-            <Button type="link" icon={<CopyOutlined />} onClick={() => setInstallModal({ open: true, command: record.installCommand })}>安装命令</Button>
+            <Button type="link" icon={<CopyOutlined />} onClick={() => setInstallModal({ open: true, command: record.installCommand, title: '安装' })}>安装命令</Button>
+          )}
+          {!record.isLocal && (
+            <Button type="link" danger icon={<CopyOutlined />} onClick={() => setInstallModal({ open: true, command: record.uninstallCommand, title: '卸载' })}>卸载命令</Button>
           )}
           {!record.isLocal && (
             <Popconfirm title="重置 Token 后原 Agent 将失效，确定？" onConfirm={() => handleRotate(record.id)} okText="确定" cancelText="取消">
@@ -133,16 +136,16 @@ export default function AdminServers() {
       </Modal>
 
       <Modal
-        title="在远程服务器执行"
+        title={`在远程服务器执行（${installModal.title}）`}
         open={installModal.open}
-        onCancel={() => setInstallModal({ open: false, command: '' })}
+        onCancel={() => setInstallModal({ open: false, command: '', title: '安装' })}
         footer={[
           <Button key="copy" type="primary" icon={<CopyOutlined />} onClick={() => copy(installModal.command, '已复制')}>复制命令</Button>,
-          <Button key="close" onClick={() => setInstallModal({ open: false, command: '' })}>关闭</Button>,
+          <Button key="close" onClick={() => setInstallModal({ open: false, command: '', title: '安装' })}>关闭</Button>,
         ]}
         width={720}
       >
-        <Paragraph type="secondary">登录远程服务器（root），执行以下命令安装 Agent：</Paragraph>
+        <Paragraph type="secondary">登录远程服务器（root），执行以下命令{installModal.title} Agent：</Paragraph>
         <Paragraph>
           <Text code style={{ wordBreak: 'break-all' }}>{installModal.command}</Text>
         </Paragraph>
