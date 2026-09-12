@@ -178,7 +178,7 @@ export default function AdminServers() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
-        <h2 style={{ margin: 0 }}>服务器管理</h2>
+        <h2 style={{ margin: 0 }}>节点管理</h2>
         <Button type="primary" onClick={() => setModalOpen(true)}>添加服务器</Button>
       </div>
       <Table columns={columns} dataSource={servers} rowKey="id" loading={loading} pagination={false} scroll={{ x: 1000 }} />

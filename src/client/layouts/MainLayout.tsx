@@ -56,9 +56,9 @@ function buildMenuItems(isAdmin: boolean) {
       label: '管理',
       children: [
         { key: '/admin/users', icon: <TeamOutlined />, label: '用户管理' },
-        { key: '/admin/servers', icon: <CloudServerOutlined />, label: '服务器管理' },
+        { key: '/admin/servers', icon: <CloudServerOutlined />, label: '节点管理' },
         { key: '/admin/packages', icon: <ShopOutlined />, label: '套餐管理' },
-        { key: '/admin/orders', icon: <OrderedListOutlined />, label: '订单与支付' },
+        { key: '/admin/orders', icon: <OrderedListOutlined />, label: '订单管理' },
         { key: '/logs', icon: <FileTextOutlined />, label: '实时日志' },
       ],
     });

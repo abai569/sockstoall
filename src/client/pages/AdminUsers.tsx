@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Tag, Modal, Form, Input, InputNumber, DatePicker, Select, message, Popconfirm, Space, Row, Col } from 'antd';
+import { Table, Button, Tag, Modal, Form, Input, InputNumber, DatePicker, Select, message, Popconfirm, Space, Row, Col, Dropdown } from 'antd';
 import { api } from '../api/client';
 import dayjs from 'dayjs';
 
@@ -148,7 +148,7 @@ export default function AdminUsers() {
     { title: '状态', dataIndex: 'status', key: 'status', render: (s: number) => <Tag color={s === 1 ? 'green' : 'default'}>{s === 1 ? '启用' : '禁用'}</Tag> },
     { title: '流量 (GB)', key: 'traffic', render: (_: any, record: any) => `${(record.usedFlowGb ?? 0).toFixed(2)} / ${Number(record.trafficLimitGb) > 0 ? record.trafficLimitGb : '不限'}` },
     { title: '代理用量 / 上限', key: 'limit', render: (_: any, record: any) => formatLimit(record) },
-    { title: '到期时间', dataIndex: 'expiredAt', key: 'expiredAt', render: (t: number) => t ? dayjs(t).format('YYYY-MM-DD') : '-' },
+    { title: '到期时间', dataIndex: 'expiredAt', key: 'expiredAt', render: (t: number) => t ? dayjs(t).format('YYYY-MM-DD') : '永久' },
     {
       title: '操作',
       key: 'action',
@@ -222,8 +222,29 @@ export default function AdminUsers() {
               </Form.Item>
             </Col>
             <Col xs={12} sm={12}>
-              <Form.Item name="expiredAt" label="到期时间">
-                <DatePicker style={{ width: '100%' }} />
+              <Form.Item label="到期时间">
+                <Space.Compact style={{ width: '100%' }}>
+                  <Form.Item name="expiredAt" noStyle>
+                    <DatePicker style={{ width: '100%' }} />
+                  </Form.Item>
+                  <Dropdown
+                    menu={{
+                      items: [
+                        { key: '1', label: '1 月后' },
+                        { key: '3', label: '3 月后' },
+                        { key: '6', label: '6 月后' },
+                        { key: '12', label: '1 年后' },
+                        { key: '0', label: '永久' },
+                      ],
+                      onClick: ({ key }) => {
+                        const months = Number(key);
+                        form.setFieldValue('expiredAt', months > 0 ? dayjs().add(months, 'month') : null);
+                      },
+                    }}
+                  >
+                    <Button>快捷</Button>
+                  </Dropdown>
+                </Space.Compact>
               </Form.Item>
             </Col>
             <Col xs={12} sm={12}>
