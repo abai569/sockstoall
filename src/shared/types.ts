@@ -144,6 +144,7 @@ export interface Route {
   id: string;
   name: string;
   nodeId: string; // 关联的节点 ID
+  userId?: number; // 所有者用户，默认 1（管理员）
   outbound: SocksOutbound;
   enabled: boolean;
   remark?: string;

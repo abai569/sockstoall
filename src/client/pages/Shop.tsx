@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Card, Row, Col, Tag, Button, message, Spin } from 'antd';
-import { ShoppingCartOutlined } from '@ant-design/icons';
 import { api } from '../api/client';
 
 export default function Shop() {
@@ -48,7 +47,7 @@ export default function Shop() {
               title={pkg.name}
               extra={pkg.recommended ? <Tag color="red">推荐</Tag> : null}
               actions={[
-                <Button type="primary" icon={<ShoppingCartOutlined />} onClick={() => handleBuy(pkg)}>
+                <Button type="primary" onClick={() => handleBuy(pkg)}>
                   购买 ¥{(pkg.price / 100).toFixed(2)}
                 </Button>
               ]}

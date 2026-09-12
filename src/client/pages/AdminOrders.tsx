@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Table, Tag, Button, Space, message, Spin, Popconfirm } from 'antd';
-import { CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { api } from '../api/client';
 
 interface Order {
@@ -116,11 +115,11 @@ export default function AdminOrders() {
       render: (_: any, record: Order) => (
         <Space>
           {record.status === 0 && (
-            <Button type="link" icon={<CheckOutlined />} onClick={() => handleComplete(record.id)}>完成</Button>
+            <Button type="link" onClick={() => handleComplete(record.id)}>完成</Button>
           )}
           {record.status === 1 && (
             <Popconfirm title="确定退款？" onConfirm={() => handleRefund(record.id)} okText="确定" cancelText="取消">
-              <Button type="link" danger icon={<CloseOutlined />}>退款</Button>
+              <Button type="link" danger>退款</Button>
             </Popconfirm>
           )}
         </Space>

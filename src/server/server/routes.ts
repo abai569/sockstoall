@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm';
 import { randomBytes } from 'crypto';
 import type { ApiResponse } from '../../shared/types.js';
 import { getNodes } from '../node/node-store.js';
-import { getAllowedServerIds, countUsersForServer } from './user-server-store.js';
+import { getAllowedServerIds, countUsersForServer, getUserIdsForServer, setServerUsers } from './user-server-store.js';
 import { getPublicIPv4 } from '../net/public-ip.js';
 
 export const serverRoutes = new Hono();
@@ -141,6 +141,33 @@ serverRoutes.put('/servers/:id', async (c) => {
   db.update(servers).set(updateData).where(eq(servers.id, id)).run();
 
   return c.json<ApiResponse>({ success: true });
+});
+
+// 获取服务器已分配的用户（管理员）
+serverRoutes.get('/servers/:id/users', (c) => {
+  if (!requireAdmin(c)) {
+    return c.json<ApiResponse>({ success: false, error: '需要管理员权限' }, 403);
+  }
+  const id = parseInt(c.req.param('id'));
+  return c.json<ApiResponse>({ success: true, data: getUserIdsForServer(id) });
+});
+
+// 设置服务器分配的用户（管理员）
+serverRoutes.put('/servers/:id/users', async (c) => {
+  if (!requireAdmin(c)) {
+    return c.json<ApiResponse>({ success: false, error: '需要管理员权限' }, 403);
+  }
+  const id = parseInt(c.req.param('id'));
+  const body = await c.req.json<{ userIds: number[] }>();
+
+  const server = db.query.servers.findFirst({ where: eq(servers.id, id) }).sync();
+  if (!server) {
+    return c.json<ApiResponse>({ success: false, error: '服务器不存在' }, 404);
+  }
+
+  const userIds = Array.isArray(body.userIds) ? body.userIds.map(Number).filter(n => !isNaN(n)) : [];
+  setServerUsers(id, userIds);
+  return c.json<ApiResponse>({ success: true, data: userIds });
 });
 
 // 轮换 Agent Token（管理员）

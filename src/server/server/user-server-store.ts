@@ -21,3 +21,17 @@ export function countUsersForServer(serverId: number): number {
     where: eq(userServers.serverId, serverId),
   }).sync().length;
 }
+
+export function getUserIdsForServer(serverId: number): number[] {
+  return db.query.userServers.findMany({
+    where: eq(userServers.serverId, serverId),
+  }).sync().map(r => r.userId);
+}
+
+export function setServerUsers(serverId: number, userIds: number[]): void {
+  db.delete(userServers).where(eq(userServers.serverId, serverId)).run();
+  const now = new Date().toISOString();
+  for (const userId of userIds) {
+    db.insert(userServers).values({ userId, serverId, createdAt: now }).run();
+  }
+}

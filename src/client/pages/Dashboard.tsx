@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card, Row, Col, Statistic, Tag, Space, Typography, Spin, Alert, Button, message } from 'antd';
 import { 
   NodeIndexOutlined, SwapOutlined, CheckCircleOutlined, 
-  ThunderboltOutlined, PlayCircleOutlined, PauseCircleOutlined,
+  ThunderboltOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { nodeApi, routeApi, xrayApi } from '../api/client';
@@ -130,9 +130,9 @@ export default function Dashboard() {
           <Col span={6}>
             <Space>
               {xrayStatus?.running ? (
-                <Button danger icon={<PauseCircleOutlined />} onClick={() => handleXrayAction('stop')} loading={actionLoading}>停止服务</Button>
+                <Button danger onClick={() => handleXrayAction('stop')} loading={actionLoading}>停止服务</Button>
               ) : (
-                <Button type="primary" icon={<PlayCircleOutlined />} onClick={() => handleXrayAction('start')} loading={actionLoading} disabled={!xrayStatus?.installed}>启动服务</Button>
+                <Button type="primary" onClick={() => handleXrayAction('start')} loading={actionLoading} disabled={!xrayStatus?.installed}>启动服务</Button>
               )}
               {isAdmin && xrayUpdate?.updateAvailable && (
                 <Button type="primary" onClick={handleXrayUpdate} loading={updateLoading}>

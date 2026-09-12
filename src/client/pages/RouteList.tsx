@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Button, Space, Tag, Popconfirm, Switch, message, Typography, Modal, Form, Input, InputNumber, Select, Row, Col } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, LinkOutlined } from '@ant-design/icons';
+import { LinkOutlined } from '@ant-design/icons';
 import { routeApi, nodeApi } from '../api/client';
 import type { Route, Node } from '../../shared/types';
 
@@ -147,9 +147,9 @@ export default function RouteList() {
       title: '操作', key: 'action',
       render: (_: any, r: Route) => (
         <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => openEdit(r)}>编辑</Button>
+          <Button type="link" onClick={() => openEdit(r)}>编辑</Button>
           <Popconfirm title="确定删除？" onConfirm={() => handleDelete(r.id)} okText="确定" cancelText="取消">
-            <Button type="link" danger icon={<DeleteOutlined />}>删除</Button>
+            <Button type="link" danger>删除</Button>
           </Popconfirm>
         </Space>
       ),
@@ -159,8 +159,8 @@ export default function RouteList() {
   return (
     <div>
       <div className="page-toolbar" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
-        <Title level={4} style={{ margin: 0 }}>转发规则</Title>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>创建规则</Button>
+        <Title level={4} style={{ margin: 0 }}>出站代理</Title>
+        <Button type="primary" onClick={openCreate}>创建规则</Button>
       </div>
       <div className="desktop-data-table"><Table loading={loading} columns={columns} dataSource={routes} rowKey="id" pagination={{ pageSize: 10 }} /></div>
       <div className="mobile-card-list">
@@ -171,7 +171,7 @@ export default function RouteList() {
             <div className="mobile-card-row"><span className="mobile-card-label">入站节点</span><span className="mobile-card-value">{node ? `${node.name} (${node.protocol}:${node.port})` : '节点已删除'}</span></div>
             <div className="mobile-card-row"><span className="mobile-card-label">出站 SOCKS</span><span className="mobile-card-value">{route.outbound.address}:{route.outbound.port}</span></div>
             <div className="mobile-card-row"><span className="mobile-card-label">备注</span><span className="mobile-card-value">{route.remark || '-'}</span></div>
-            <div className="mobile-card-actions"><Button type="link" size="small" icon={<EditOutlined />} onClick={() => openEdit(route)}>编辑</Button><Popconfirm title="确定删除？" onConfirm={() => handleDelete(route.id)} okText="确定" cancelText="取消"><Button type="link" danger size="small" icon={<DeleteOutlined />}>删除</Button></Popconfirm></div>
+            <div className="mobile-card-actions"><Button type="link" size="small" onClick={() => openEdit(route)}>编辑</Button><Popconfirm title="确定删除？" onConfirm={() => handleDelete(route.id)} okText="确定" cancelText="取消"><Button type="link" danger size="small">删除</Button></Popconfirm></div>
           </div>;
         })}
       </div>

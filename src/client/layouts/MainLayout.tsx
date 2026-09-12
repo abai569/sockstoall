@@ -6,7 +6,6 @@ import {
   SwapOutlined, 
   FileTextOutlined, 
   SettingOutlined,
-  UserOutlined,
   LogoutOutlined,
   LockOutlined,
   DownOutlined,
@@ -33,9 +32,8 @@ function buildMenuItems(isAdmin: boolean) {
       type: 'group',
       label: '代理',
       children: [
-        { key: '/nodes', icon: <NodeIndexOutlined />, label: '节点管理' },
-        { key: '/routes', icon: <SwapOutlined />, label: '转发规则' },
-        { key: '/logs', icon: <FileTextOutlined />, label: '实时日志' },
+        { key: '/nodes', icon: <NodeIndexOutlined />, label: '入站代理' },
+        { key: '/routes', icon: <SwapOutlined />, label: '出站代理' },
       ],
     },
   ];
@@ -61,6 +59,7 @@ function buildMenuItems(isAdmin: boolean) {
         { key: '/admin/servers', icon: <CloudServerOutlined />, label: '服务器管理' },
         { key: '/admin/packages', icon: <ShopOutlined />, label: '套餐管理' },
         { key: '/admin/orders', icon: <OrderedListOutlined />, label: '订单与支付' },
+        { key: '/logs', icon: <FileTextOutlined />, label: '实时日志' },
       ],
     });
   }
@@ -214,9 +213,9 @@ export default function MainLayout() {
           <Button className="mobile-menu-button" type="text" icon={<MenuOutlined />} onClick={() => setMobileMenuOpen(true)} />
           <div style={{ marginLeft: 'auto' }}>
             <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-              <Button type="text" icon={<UserOutlined />}>
-                {username || '用户'} <DownOutlined style={{ fontSize: 12 }} />
-              </Button>
+            <Button type="text">
+              {username || '用户'} <DownOutlined style={{ fontSize: 12 }} />
+            </Button>
             </Dropdown>
           </div>
         </Header>

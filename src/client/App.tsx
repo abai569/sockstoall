@@ -27,6 +27,14 @@ function LoginRoute() {
   return <Login />;
 }
 
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { token, isAdmin, role } = useAuth();
+  if (!token) return <Navigate to="/login" replace />;
+  if (role === null) return null;
+  if (!isAdmin) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -40,11 +48,11 @@ function App() {
             <Route path="routes" element={<RouteList />} />
             <Route path="shop" element={<Shop />} />
             <Route path="orders" element={<Orders />} />
-            <Route path="logs" element={<Logs />} />
-            <Route path="admin/packages" element={<AdminPackagesPage />} />
-            <Route path="admin/orders" element={<AdminOrdersPage />} />
-            <Route path="admin/users" element={<AdminUsers />} />
-            <Route path="admin/servers" element={<AdminServers />} />
+            <Route path="logs" element={<AdminRoute><Logs /></AdminRoute>} />
+            <Route path="admin/packages" element={<AdminRoute><AdminPackagesPage /></AdminRoute>} />
+            <Route path="admin/orders" element={<AdminRoute><AdminOrdersPage /></AdminRoute>} />
+            <Route path="admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+            <Route path="admin/servers" element={<AdminRoute><AdminServers /></AdminRoute>} />
             <Route path="settings" element={<Settings />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

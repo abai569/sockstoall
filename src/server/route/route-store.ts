@@ -24,7 +24,20 @@ export function getRoutes(): Route[] {
   }
   
   const content = readFileSync(ROUTES_FILE, 'utf-8');
-  return JSON.parse(content);
+  const routes = JSON.parse(content) as Route[];
+  let migrated = false;
+  for (const route of routes) {
+    if (route.userId === undefined || route.userId === null) {
+      route.userId = 1;
+      migrated = true;
+    }
+  }
+  if (migrated) saveRoutes(routes);
+  return routes;
+}
+
+export function countRoutesByUser(userId: number): number {
+  return getRoutes().filter(r => (r.userId ?? 1) === userId).length;
 }
 
 export function saveRoutes(routes: Route[]): void {

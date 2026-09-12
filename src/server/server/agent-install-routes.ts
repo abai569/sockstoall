@@ -16,11 +16,12 @@ function getPanelBaseUrl(c: any): string {
 
 function renderInstallScript(panelUrl: string, token: string): string {
   return `#!/bin/bash
-set -e
 
 PANEL_URL="${panelUrl}"
 AGENT_TOKEN="${token}"
 AGENT_DIR="${AGENT_DIR}"
+NODE_DIR="$AGENT_DIR/node"
+NODE_VERSION="v20.18.1"
 
 if [ "$EUID" -ne 0 ]; then
   echo "Please run as root"
@@ -40,22 +41,70 @@ fi
 
 echo "[INFO] Installing SocksToAll Agent..."
 
-# 1. base deps
-if command -v apt-get &>/dev/null; then
-  apt-get update -y
-  apt-get install -y curl wget unzip ca-certificates
-elif command -v dnf &>/dev/null; then
-  dnf install -y curl wget unzip ca-certificates
-else
-  yum install -y curl wget unzip ca-certificates
+detect_arch() {
+  case "$(uname -m)" in
+    x86_64|amd64) echo "x64" ;;
+    aarch64|arm64) echo "arm64" ;;
+    armv7l) echo "armv7l" ;;
+    *) echo "x64" ;;
+  esac
+}
+
+extract_zip() {
+  if command -v unzip &>/dev/null; then
+    unzip -q -o "$1" -d "$2"
+  elif command -v python3 &>/dev/null; then
+    python3 -m zipfile -e "$1" "$2"
+  else
+    return 1
+  fi
+}
+
+# 1. base tools（已存在则跳过 apt，避免受宿主机 dpkg 状态影响）
+MISSING_TOOLS=""
+for cmd in curl wget; do
+  command -v "$cmd" &>/dev/null || MISSING_TOOLS="$MISSING_TOOLS $cmd"
+done
+if [ -n "$MISSING_TOOLS" ]; then
+  echo "[INFO] Installing base tools:$MISSING_TOOLS"
+  if command -v apt-get &>/dev/null; then
+    DEBIAN_FRONTEND=noninteractive apt-get update -y || true
+    DEBIAN_FRONTEND=noninteractive apt-get install -y curl wget unzip ca-certificates || true
+  elif command -v dnf &>/dev/null; then
+    dnf install -y curl wget unzip ca-certificates || true
+  elif command -v yum &>/dev/null; then
+    yum install -y curl wget unzip ca-certificates || true
+  fi
 fi
 
-# 2. Node.js 20+
+for cmd in curl wget; do
+  if ! command -v "$cmd" &>/dev/null; then
+    echo "[ERROR] 缺少命令 $cmd，且自动安装失败。请先修复系统包管理器（如 dpkg --configure -a）后重试"
+    exit 1
+  fi
+done
+
+# 2. Node.js（官方预编译包，不走 apt）
 if ! command -v node &>/dev/null; then
-  echo "[INFO] Installing Node.js 20..."
-  curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-  apt-get install -y nodejs
+  ARCH=$(detect_arch)
+  echo "[INFO] Installing Node.js $NODE_VERSION ($ARCH)..."
+  mkdir -p "$NODE_DIR"
+  TMP_NODE=$(mktemp -d)
+  NODE_TARBALL="node-\${NODE_VERSION}-linux-\${ARCH}.tar.gz"
+  if wget -q -O "$TMP_NODE/node.tar.gz" "https://nodejs.org/dist/\${NODE_VERSION}/\${NODE_TARBALL}"; then
+    tar -xzf "$TMP_NODE/node.tar.gz" -C "$NODE_DIR" --strip-components=1
+    ln -sf "$NODE_DIR/bin/node" /usr/local/bin/node
+    ln -sf "$NODE_DIR/bin/npm" /usr/local/bin/npm 2>/dev/null || true
+    ln -sf "$NODE_DIR/bin/npx" /usr/local/bin/npx 2>/dev/null || true
+  fi
+  rm -rf "$TMP_NODE"
 fi
+
+if ! command -v node &>/dev/null; then
+  echo "[ERROR] Node.js 安装失败，请手动安装 Node.js 20 后重试"
+  exit 1
+fi
+NODE_BIN="$(command -v node)"
 
 # 3. Xray
 mkdir -p "$AGENT_DIR/bin" "$AGENT_DIR/data"
@@ -68,9 +117,14 @@ if [ ! -f "$AGENT_DIR/bin/xray" ]; then
   esac
   TMP=$(mktemp -d)
   wget -q -O "$TMP/xray.zip" "https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-\${XRAY_ARCH}.zip"
-  unzip -q -o "$TMP/xray.zip" xray -d "$TMP"
-  mv "$TMP/xray" "$AGENT_DIR/bin/xray"
-  chmod +x "$AGENT_DIR/bin/xray"
+  if extract_zip "$TMP/xray.zip" "$TMP"; then
+    mv "$TMP/xray" "$AGENT_DIR/bin/xray"
+    chmod +x "$AGENT_DIR/bin/xray"
+  else
+    echo "[ERROR] 解压工具缺失（unzip/python3），无法解压 Xray"
+    rm -rf "$TMP"
+    exit 1
+  fi
   rm -rf "$TMP"
 fi
 
@@ -95,7 +149,7 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=$AGENT_DIR
-ExecStart=/usr/bin/node $AGENT_DIR/agent.mjs
+ExecStart=$NODE_BIN $AGENT_DIR/agent.mjs
 Restart=always
 RestartSec=10
 

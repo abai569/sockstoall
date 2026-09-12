@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Space, Tag, Popconfirm, message, Typography, Modal, Input, Tooltip, QRCode, Switch, Form, Select, InputNumber, Divider, Row, Col } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, LinkOutlined, QrcodeOutlined, CopyOutlined } from '@ant-design/icons';
+import { Table, Button, Space, Tag, Popconfirm, message, Typography, Modal, Input, QRCode, Switch, Form, Select, InputNumber, Divider, Row, Col } from 'antd';
 import { nodeApi, linkApi, api, authApi } from '../api/client';
 import type { NodeProtocol } from '../../shared/types';
 
@@ -225,13 +224,13 @@ export default function Nodes() {
         <Space size="small">
           {record.shareLink && (
             <>
-              <Tooltip title="二维码"><Button size="small" type="text" icon={<QrcodeOutlined />} onClick={() => { setSelectedNode(record); setQrModalOpen(true); }} /></Tooltip>
-              <Tooltip title="复制链接"><Button size="small" type="text" icon={<CopyOutlined />} onClick={() => copyLink(record.shareLink!)} /></Tooltip>
+              <Button size="small" type="text" onClick={() => { setSelectedNode(record); setQrModalOpen(true); }}>二维码</Button>
+              <Button size="small" type="text" onClick={() => copyLink(record.shareLink!)}>复制</Button>
             </>
           )}
-          <Tooltip title="编辑"><Button size="small" type="text" icon={<EditOutlined />} onClick={() => openEdit(record)} /></Tooltip>
+          <Button size="small" type="text" onClick={() => openEdit(record)}>编辑</Button>
           <Popconfirm title="确定删除？" onConfirm={() => handleDelete(record.id)} okText="确定" cancelText="取消">
-            <Button size="small" type="text" danger icon={<DeleteOutlined />} />
+            <Button size="small" type="text" danger>删除</Button>
           </Popconfirm>
         </Space>
       ),
@@ -242,10 +241,10 @@ export default function Nodes() {
     <div>
       <div className="page-toolbar" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
         <Space>
-          <Title level={4} style={{ margin: 0 }}>节点管理</Title>
+          <Title level={4} style={{ margin: 0 }}>入站代理</Title>
           {quota && quota.role !== 'admin' && (
             <Tag color="blue">
-              节点用量：{quota.nodeCount} / {quota.maxNodes > 0 ? quota.maxNodes : '无限制'}
+              入站用量：{quota.nodeCount} / {quota.maxNodes > 0 ? quota.maxNodes : '无限制'}
             </Tag>
           )}
         </Space>
@@ -256,8 +255,8 @@ export default function Nodes() {
             onChange={(v) => setFilterServerId(v)}
             options={[{ value: 'all', label: '全部服务器' }, ...servers.map(s => ({ value: s.id, label: s.name }))]}
           />
-          <Button icon={<LinkOutlined />} onClick={() => setImportModalOpen(true)}>导入链接</Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>创建节点</Button>
+          <Button onClick={() => setImportModalOpen(true)}>导入链接</Button>
+          <Button type="primary" onClick={openCreate}>创建规则</Button>
         </Space>
       </div>
       <div className="desktop-data-table"><Table loading={loading} columns={columns} dataSource={nodes} rowKey="id" pagination={{ pageSize: 10 }} /></div>
@@ -270,9 +269,9 @@ export default function Nodes() {
             <div className="mobile-card-row"><span className="mobile-card-label">备注</span><span className="mobile-card-value">{node.remark || '-'}</span></div>
             <div className="mobile-card-row"><span className="mobile-card-label">状态</span><Switch checked={node.enabled} onChange={(value) => handleToggle(node.id, value)} checkedChildren="启用" unCheckedChildren="禁用" /></div>
             <div className="mobile-card-actions">
-              {node.shareLink && <Button size="small" icon={<QrcodeOutlined />} onClick={() => { setSelectedNode(node); setQrModalOpen(true); }}>二维码</Button>}
-              <Button size="small" icon={<EditOutlined />} onClick={() => openEdit(node)}>编辑</Button>
-              <Popconfirm title="确定删除？" onConfirm={() => handleDelete(node.id)} okText="确定" cancelText="取消"><Button size="small" danger icon={<DeleteOutlined />}>删除</Button></Popconfirm>
+              {node.shareLink && <Button size="small" onClick={() => { setSelectedNode(node); setQrModalOpen(true); }}>二维码</Button>}
+              <Button size="small" onClick={() => openEdit(node)}>编辑</Button>
+              <Popconfirm title="确定删除？" onConfirm={() => handleDelete(node.id)} okText="确定" cancelText="取消"><Button size="small" danger>删除</Button></Popconfirm>
             </div>
           </div>
         ))}
@@ -280,7 +279,7 @@ export default function Nodes() {
 
       {/* 创建/编辑弹窗 */}
       <Modal
-        title={editId ? '编辑节点' : '创建节点'}
+        title={editId ? '编辑规则' : '创建规则'}
         open={modalOpen}
         onOk={handleSubmit}
         onCancel={() => setModalOpen(false)}
@@ -464,7 +463,7 @@ export default function Nodes() {
               <QRCode value={selectedNode.shareLink} size={256} />
             </div>
             <Paragraph copyable style={{ marginTop: 16, wordBreak: 'break-all', fontSize: 12 }}>{selectedNode.shareLink}</Paragraph>
-            <Button type="primary" icon={<CopyOutlined />} onClick={() => copyLink(selectedNode.shareLink!)} style={{ marginTop: 8 }}>复制链接</Button>
+            <Button type="primary" onClick={() => copyLink(selectedNode.shareLink!)} style={{ marginTop: 8 }}>复制链接</Button>
           </div>
         )}
       </Modal>

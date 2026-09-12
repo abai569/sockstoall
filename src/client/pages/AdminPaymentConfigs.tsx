@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Table, Button, Modal, Form, Input, Select, message, Tag, Row, Col } from 'antd';
-import { PlusOutlined, EditOutlined } from '@ant-design/icons';
 import { api } from '../api/client';
 
 const CHANNELS = [
@@ -73,7 +72,7 @@ export default function AdminPaymentConfigs() {
       title: '操作',
       key: 'action',
       render: (_: any, record: any) => (
-        <Button type="link" icon={<EditOutlined />} onClick={() => openEdit(record)}>配置</Button>
+        <Button type="link" onClick={() => openEdit(record)}>配置</Button>
       ),
     },
   ];
@@ -178,7 +177,7 @@ export default function AdminPaymentConfigs() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
         <h2 style={{ margin: 0 }}>支付配置</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>添加渠道</Button>
+        <Button type="primary" onClick={openCreate}>添加渠道</Button>
       </div>
       <Table columns={columns} dataSource={configs} rowKey="id" loading={loading} pagination={false} />
 

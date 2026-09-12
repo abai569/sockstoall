@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Table, Button, Space, Tag, Modal, Form, Input, InputNumber, Select, message, Spin, Popconfirm, Row, Col } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { api } from '../api/client';
 
 interface Package {
@@ -156,9 +155,9 @@ export default function AdminPackages() {
       key: 'action',
       render: (_: any, record: Package) => (
         <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => openEdit(record)}>编辑</Button>
+          <Button type="link" onClick={() => openEdit(record)}>编辑</Button>
           <Popconfirm title="确定删除？" onConfirm={() => handleDelete(record.id)} okText="确定" cancelText="取消">
-            <Button type="link" danger icon={<DeleteOutlined />}>删除</Button>
+            <Button type="link" danger>删除</Button>
           </Popconfirm>
         </Space>
       ),
@@ -173,7 +172,7 @@ export default function AdminPackages() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
         <h2 style={{ margin: 0 }}>套餐管理</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>创建套餐</Button>
+        <Button type="primary" onClick={openCreate}>创建套餐</Button>
       </div>
       
       <Table columns={columns} dataSource={packages} rowKey="id" pagination={{ pageSize: 20 }} />
@@ -224,12 +223,7 @@ export default function AdminPackages() {
               </Form.Item>
             </Col>
             <Col xs={24} sm={12}>
-              <Form.Item name="maxNodes" label="最大节点数" extra="0 表示不改变用户当前设置">
-                <InputNumber min={0} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-            <Col xs={24} sm={12}>
-              <Form.Item name="maxRules" label="最大规则数" extra="0 表示无限">
+              <Form.Item name="maxNodes" label="最大规则数" extra="入站/出站各自上限，0 表示不改变用户当前设置">
                 <InputNumber min={0} style={{ width: '100%' }} />
               </Form.Item>
             </Col>

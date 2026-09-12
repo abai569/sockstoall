@@ -1,6 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
 import { Card, Typography, Switch, Select, Space, Button, Tag } from 'antd';
-import { ClearOutlined } from '@ant-design/icons';
 import { useWebSocket } from '../hooks/useWebSocket';
 
 const { Title, Text } = Typography;
@@ -69,7 +68,7 @@ export default function Logs() {
               checkedChildren="自动滚动"
               unCheckedChildren="自动滚动"
             />
-            <Button icon={<ClearOutlined />} onClick={clearLogs}>
+            <Button onClick={clearLogs}>
               清空
             </Button>
           </Space>

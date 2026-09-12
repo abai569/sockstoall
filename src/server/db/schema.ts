@@ -9,7 +9,7 @@ export const users = sqliteTable('users', {
   status: integer('status').notNull().default(1), // 0=禁用，1=启用
   trafficLimitGb: real('traffic_limit_gb').default(0), // 流量配额 GB
   expiredAt: integer('expired_at').default(0), // 到期时间戳
-  maxNodes: integer('max_nodes').default(5), // 最大节点数
+  maxNodes: integer('max_nodes').default(0), // 最大规则数（入站/出站各自上限），0=不限制
   balance: integer('balance').default(0),
   trafficFlow: real('traffic_flow').default(0),
   totalFlowGb: real('total_flow_gb').default(0),

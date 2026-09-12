@@ -219,7 +219,7 @@ export function initDatabase() {
   addColumnIfMissing('users', 'role', "TEXT NOT NULL DEFAULT 'user'");
   addColumnIfMissing('users', 'status', 'INTEGER NOT NULL DEFAULT 1');
   addColumnIfMissing('users', 'traffic_limit_gb', 'REAL DEFAULT 0');
-  addColumnIfMissing('users', 'max_nodes', 'INTEGER DEFAULT 5');
+  addColumnIfMissing('users', 'max_nodes', 'INTEGER DEFAULT 0');
   addColumnIfMissing('servers', 'is_local', 'INTEGER NOT NULL DEFAULT 0');
   addColumnIfMissing('subscription_packages', 'max_nodes', 'INTEGER DEFAULT 0');
 
@@ -269,7 +269,7 @@ function seedUsers(): void {
       const legacy = JSON.parse(readFileSync(USERS_FILE, 'utf-8')) as Array<{ username: string; passwordHash: string; createdAt?: string }>;
       for (const item of legacy) {
         const isAdmin = item.username === 'admin';
-        insert.run(item.username, item.passwordHash, isAdmin ? 'admin' : 'user', isAdmin ? -1 : 5, item.createdAt || now, now);
+        insert.run(item.username, item.passwordHash, isAdmin ? 'admin' : 'user', isAdmin ? -1 : 0, item.createdAt || now, now);
       }
       console.log(`Migrated ${legacy.length} user(s) from users.json`);
       return;
