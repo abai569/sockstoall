@@ -177,6 +177,11 @@ export default function Dashboard() {
         <Row gutter={[16, 16]}>
           <Col xs={24} sm={12} lg={6}>
             <Card>
+              <Statistic title="节点数量" value={me?.nodeCount ?? 0} prefix={<NodeIndexOutlined />} valueStyle={{ color: '#1890ff' }} />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card>
               <Statistic title="入站规则" value={`${me?.nodeCount ?? 0} / ${Number(me?.maxNodes) > 0 ? me.maxNodes : '不限'}`} prefix={<NodeIndexOutlined />} valueStyle={{ color: '#1890ff' }} />
             </Card>
           </Col>

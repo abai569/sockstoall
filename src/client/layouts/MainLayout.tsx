@@ -44,7 +44,7 @@ function buildMenuItems(isAdmin: boolean) {
       label: '用户',
       children: [
         { key: '/shop', icon: <ShoppingCartOutlined />, label: '商城' },
-        { key: '/orders', icon: <OrderedListOutlined />, label: '我的订单' },
+        { key: '/orders', icon: <OrderedListOutlined />, label: '订单' },
       ],
     });
   }
