@@ -20,7 +20,7 @@ export default function Dashboard() {
   const [updateLoading, setUpdateLoading] = useState(false);
   const [xrayUpdate, setXrayUpdate] = useState<any>(null);
   const navigate = useNavigate();
-  const { username } = useAuth();
+  const { isAdmin } = useAuth();
 
   const loadData = async () => {
     setLoading(true);
@@ -33,7 +33,7 @@ export default function Dashboard() {
       setRouteCount(routes.length);
       setEnabledRoutes(routes.filter((r: any) => r.enabled).length);
       setXrayStatus(xrayRes.data.data);
-      if (username === 'admin') {
+      if (isAdmin) {
         const updateRes = await xrayApi.checkUpdate();
         setXrayUpdate(updateRes.data.data);
       }
@@ -134,7 +134,7 @@ export default function Dashboard() {
               ) : (
                 <Button type="primary" icon={<PlayCircleOutlined />} onClick={() => handleXrayAction('start')} loading={actionLoading} disabled={!xrayStatus?.installed}>启动服务</Button>
               )}
-              {username === 'admin' && xrayUpdate?.updateAvailable && (
+              {isAdmin && xrayUpdate?.updateAvailable && (
                 <Button type="primary" onClick={handleXrayUpdate} loading={updateLoading}>
                   升级至 v{xrayUpdate.latestVersion}
                 </Button>

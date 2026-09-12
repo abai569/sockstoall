@@ -14,7 +14,7 @@ export interface PaymentGatewayFactory {
 export function getPaymentGateway(channel: string): PaymentGatewayFactory | null {
   const config = db.query.paymentConfigs.findFirst({
     where: eq(paymentConfigs.channel, channel),
-  });
+  }).sync();
 
   if (!config || config.enabled !== 1) {
     return null;
@@ -64,7 +64,7 @@ export function getPaymentGateway(channel: string): PaymentGatewayFactory | null
 export function getAvailablePaymentChannels(): string[] {
   const configs = db.query.paymentConfigs.findMany({
     where: eq(paymentConfigs.enabled, 1),
-  });
+  }).sync();
 
   return configs.map(c => c.channel);
 }

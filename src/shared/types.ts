@@ -155,8 +155,10 @@ export type CreateRouteRequest = Omit<Route, 'id' | 'createdAt' | 'updatedAt'>;
 
 /** 用户 */
 export interface User {
+  id: number;
   username: string;
   passwordHash: string;
+  role: string;
   createdAt: string;
 }
 

@@ -15,7 +15,7 @@ shopRoutes.get('/packages', (c) => {
       eq(subscriptionPackages.shopVisible, 1)
     ),
     orderBy: [subscriptionPackages.sortOrder, subscriptionPackages.id],
-  });
+  }).sync();
   
   return c.json({ success: true, data: packages });
 });
@@ -25,7 +25,7 @@ shopRoutes.get('/packages/:id', (c) => {
   const id = parseInt(c.req.param('id'));
   const pkg = db.query.subscriptionPackages.findFirst({
     where: eq(subscriptionPackages.id, id),
-  });
+  }).sync();
   
   if (!pkg) {
     return c.json({ success: false, error: '套餐不存在' }, 404);
@@ -38,7 +38,7 @@ shopRoutes.get('/packages/:id', (c) => {
 shopRoutes.get('/package-groups', (c) => {
   const groups = db.query.packageGroups.findMany({
     orderBy: [packageGroups.sortOrder, packageGroups.id],
-  });
+  }).sync();
   
   return c.json({ success: true, data: groups });
 });

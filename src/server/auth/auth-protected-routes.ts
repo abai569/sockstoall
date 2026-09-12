@@ -101,9 +101,9 @@ authProtectedRoutes.get('/me', async (c) => {
     return c.json<ApiResponse>({ success: false, error: '用户不存在' }, 404);
   }
   
-  return c.json<ApiResponse<{ username: string }>>({ 
-    success: true, 
-    data: { username: user.username } 
+  return c.json<ApiResponse<{ username: string; role: string }>>({
+    success: true,
+    data: { username: user.username, role: user.role }
   });
 });
 

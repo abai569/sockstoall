@@ -12,7 +12,7 @@ balanceRoutes.get('/balance', (c) => {
   
   const user = db.query.users.findFirst({
     where: eq(sql`id`, userId),
-  });
+  }).sync();
   
   if (!user) {
     return c.json({ success: false, error: '用户不存在' }, 404);
@@ -29,7 +29,7 @@ balanceRoutes.get('/balance/logs', (c) => {
     where: eq(balanceLogs.userId, userId),
     orderBy: [desc(balanceLogs.createdAt)],
     limit: 100,
-  });
+  }).sync();
   
   return c.json({ success: true, data: logs });
 });
@@ -44,7 +44,7 @@ balanceRoutes.post('/admin/users/:userId/balance', async (c) => {
     
     const user = db.query.users.findFirst({
       where: eq(sql`id`, targetUserId),
-    });
+    }).sync();
     
     if (!user) {
       return c.json({ success: false, error: '用户不存在' }, 404);
@@ -78,7 +78,7 @@ balanceRoutes.get('/admin/balance/logs', (c) => {
   const logs = db.query.balanceLogs.findMany({
     orderBy: [desc(balanceLogs.createdAt)],
     limit: 200,
-  });
+  }).sync();
   
   return c.json({ success: true, data: logs });
 });

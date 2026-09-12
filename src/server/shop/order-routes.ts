@@ -23,7 +23,7 @@ function calculateExpireAt(validityDays: number): number {
 async function applyPackageToUser(userId: number, pkg: any, orderId: number) {
   const user = db.query.users.findFirst({
     where: eq(sql`id`, userId),
-  });
+  }).sync();
   
   if (!user) throw new Error('用户不存在');
   
@@ -33,7 +33,7 @@ async function applyPackageToUser(userId: number, pkg: any, orderId: number) {
       eq(userSubscriptions.userId, userId),
       eq(userSubscriptions.status, 1)
     ),
-  });
+  }).sync();
   
   for (const sub of activeSubs) {
     db.update(userSubscriptions)
@@ -93,7 +93,7 @@ orderRoutes.post('/orders', async (c) => {
         eq(subscriptionPackages.enabled, 1),
         eq(subscriptionPackages.shopVisible, 1)
       ),
-    });
+    }).sync();
     
     if (!pkg) {
       return c.json({ success: false, error: '套餐不存在或已下架' }, 404);
@@ -110,7 +110,7 @@ orderRoutes.post('/orders', async (c) => {
       // 余额支付：立即完成
       const user = db.query.users.findFirst({
         where: eq(sql`id`, userId),
-      });
+      }).sync();
       
       if (!user || (user.balance || 0) < pkg.price) {
         return c.json({ success: false, error: '余额不足' }, 400);
@@ -160,7 +160,7 @@ orderRoutes.post('/orders', async (c) => {
     // 外部支付：创建待支付订单
     const user = db.query.users.findFirst({
       where: eq(sql`id`, userId),
-    });
+    }).sync();
     
     const result = db.insert(orders).values({
       orderNo,
@@ -198,7 +198,7 @@ orderRoutes.get('/orders', (c) => {
     where: eq(orders.userId, userId),
     orderBy: [desc(orders.createdAt)],
     limit: 50,
-  });
+  }).sync();
   
   return c.json({ success: true, data: userOrders });
 });
@@ -213,7 +213,7 @@ orderRoutes.get('/orders/:id', (c) => {
       eq(orders.id, id),
       eq(orders.userId, userId)
     ),
-  });
+  }).sync();
   
   if (!order) {
     return c.json({ success: false, error: '订单不存在' }, 404);
@@ -233,7 +233,7 @@ orderRoutes.post('/orders/:id/cancel', (c) => {
       eq(orders.userId, userId),
       eq(orders.status, 0)
     ),
-  });
+  }).sync();
   
   if (!order) {
     return c.json({ success: false, error: '订单不存在或已处理' }, 404);
@@ -263,7 +263,7 @@ orderRoutes.post('/orders/:id/pay', async (c) => {
       eq(orders.userId, userId),
       eq(orders.status, 0)
     ),
-  });
+  }).sync();
 
   if (!order) {
     return c.json({ success: false, error: '订单不存在或已处理' }, 404);
@@ -293,7 +293,7 @@ orderRoutes.get('/admin/orders', (c) => {
   const allOrders = db.query.orders.findMany({
     orderBy: [desc(orders.createdAt)],
     limit: 100,
-  });
+  }).sync();
   
   return c.json({ success: true, data: allOrders });
 });
@@ -304,7 +304,7 @@ orderRoutes.post('/admin/orders/:id/complete', async (c) => {
   
   const order = db.query.orders.findFirst({
     where: eq(orders.id, id),
-  });
+  }).sync();
   
   if (!order) {
     return c.json({ success: false, error: '订单不存在' }, 404);
@@ -325,7 +325,7 @@ orderRoutes.post('/admin/orders/:id/complete', async (c) => {
   if (pkg.type === 'balance') {
     const user = db.query.users.findFirst({
       where: eq(sql`id`, order.userId),
-    });
+    }).sync();
     const balanceBefore = user?.balance || 0;
     const balanceAfter = balanceBefore + pkg.price;
     
@@ -356,7 +356,7 @@ orderRoutes.post('/admin/orders/:id/refund', (c) => {
   
   const order = db.query.orders.findFirst({
     where: eq(orders.id, id),
-  });
+  }).sync();
   
   if (!order) {
     return c.json({ success: false, error: '订单不存在' }, 404);
@@ -375,7 +375,7 @@ orderRoutes.post('/admin/orders/:id/refund', (c) => {
   if (order.payCurrency === 'BALANCE') {
     const user = db.query.users.findFirst({
       where: eq(sql`id`, order.userId),
-    });
+    }).sync();
     const balanceBefore = user?.balance || 0;
     const balanceAfter = balanceBefore + order.amount;
     

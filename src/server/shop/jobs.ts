@@ -17,7 +17,7 @@ export function runAutoRenewCheck() {
         eq(userSubscriptions.status, 1),
         eq(userSubscriptions.autoRenew, 1)
       ),
-    });
+    }).sync();
     
     for (const sub of expiringSubs) {
       const hoursUntilExpiry = (sub.expireAt - now) / (1000 * 60 * 60);
@@ -26,7 +26,7 @@ export function runAutoRenewCheck() {
       
       const user = db.query.users.findFirst({
         where: eq(sql`id`, sub.userId),
-      });
+      }).sync();
       
       if (!user || (user.balance || 0) < sub.renewalAmount) {
         console.log(`[AutoRenew] User ${sub.userId} insufficient balance for renewal`);
@@ -80,7 +80,7 @@ export function runAutoBuyTrafficCheck() {
     // 查找启用了自动购买流量的用户
     const usersWithAutoBuy = db.query.users.findMany({
       where: eq(sql`auto_buy_traffic`, 1),
-    });
+    }).sync();
     
     for (const user of usersWithAutoBuy) {
       if (!user.autoBuyTrafficPackageId) continue;
@@ -88,7 +88,7 @@ export function runAutoBuyTrafficCheck() {
       // 获取关联的流量套餐
       const pkg = db.query.subscriptionPackages.findFirst({
         where: eq(sql`id`, user.autoBuyTrafficPackageId),
-      });
+      }).sync();
       
       if (!pkg || pkg.type !== 'traffic' || !pkg.autoBuyTrafficEnabled) continue;
       
@@ -153,7 +153,7 @@ export function cleanupExpiredOrders() {
         eq(sql`status`, 0),
         sql`pay_expires_at < ${now}`
       ),
-    });
+    }).sync();
     
     for (const order of expiredOrders) {
       // 标记为已取消

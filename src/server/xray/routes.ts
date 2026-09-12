@@ -28,7 +28,7 @@ xrayRoutes.get('/status', async (c) => {
 
 // 检查 Xray 更新（仅管理员）
 xrayRoutes.get('/update', async (c) => {
-  if ((c as any).get('username') !== 'admin') {
+  if ((c as any).get('role') !== 'admin') {
     return c.json<ApiResponse>({ success: false, error: '仅管理员可以管理 Xray' }, 403);
   }
 
@@ -37,7 +37,7 @@ xrayRoutes.get('/update', async (c) => {
 
 // 升级 Xray（仅管理员）
 xrayRoutes.post('/update', async (c) => {
-  if ((c as any).get('username') !== 'admin') {
+  if ((c as any).get('role') !== 'admin') {
     return c.json<ApiResponse>({ success: false, error: '仅管理员可以管理 Xray' }, 403);
   }
 

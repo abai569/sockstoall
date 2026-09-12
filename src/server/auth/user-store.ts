@@ -1,65 +1,65 @@
 /**
- * 用户存储
+ * 用户存储 - 基于 SQLite users 表
  */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { db } from '../db/index.js';
+import { users } from '../db/schema.js';
+import { eq } from 'drizzle-orm';
 import type { User } from '../../shared/types.js';
-import { hashPassword } from './password.js';
 
-const DATA_DIR = join(process.cwd(), 'data');
-const USERS_FILE = join(DATA_DIR, 'users.json');
-
-function ensureDataDir() {
-  if (!existsSync(DATA_DIR)) {
-    mkdirSync(DATA_DIR, { recursive: true });
-  }
+function toUser(row: any): User {
+  return {
+    id: row.id,
+    username: row.username,
+    passwordHash: row.passwordHash,
+    role: row.role || 'user',
+    createdAt: row.createdAt || '',
+  };
 }
 
 export async function getUsers(): Promise<User[]> {
-  ensureDataDir();
-  if (!existsSync(USERS_FILE)) {
-    // 创建默认用户 admin/admin123
-    const defaultHash = await hashPassword('admin123');
-    const defaultUsers: User[] = [{
-      username: 'admin',
-      passwordHash: defaultHash,
-      createdAt: new Date().toISOString(),
-    }];
-    writeFileSync(USERS_FILE, JSON.stringify(defaultUsers, null, 2));
-    return defaultUsers;
-  }
-  
-  const content = readFileSync(USERS_FILE, 'utf-8');
-  return JSON.parse(content);
-}
-
-async function saveUsers(users: User[]): Promise<void> {
-  ensureDataDir();
-  writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+  return db.query.users.findMany().sync().map(toUser);
 }
 
 export async function getUser(username: string): Promise<User | null> {
-  const users = await getUsers();
-  return users.find(u => u.username === username) || null;
+  const row = db.query.users.findFirst({
+    where: eq(users.username, username),
+  }).sync();
+  return row ? toUser(row) : null;
+}
+
+export async function getUserById(id: number): Promise<User | null> {
+  const row = db.query.users.findFirst({
+    where: eq(users.id, id),
+  }).sync();
+  return row ? toUser(row) : null;
+}
+
+export async function createUser(username: string, passwordHash: string, role = 'user'): Promise<User | null> {
+  const now = new Date().toISOString();
+  const result = db.insert(users).values({
+    username,
+    passwordHash,
+    role,
+    createdAt: now,
+    updatedAt: now,
+  }).run();
+
+  return getUserById(result.lastInsertRowid as number);
 }
 
 export async function updateUserPassword(username: string, newPasswordHash: string): Promise<boolean> {
-  const users = await getUsers();
-  const index = users.findIndex(u => u.username === username);
-  if (index === -1) return false;
-  
-  users[index].passwordHash = newPasswordHash;
-  await saveUsers(users);
-  return true;
+  const result = db.update(users)
+    .set({ passwordHash: newPasswordHash, updatedAt: new Date().toISOString() })
+    .where(eq(users.username, username))
+    .run();
+  return result.changes > 0;
 }
 
 export async function renameUser(oldUsername: string, newUsername: string): Promise<boolean> {
-  const users = await getUsers();
-  const index = users.findIndex(u => u.username === oldUsername);
-  if (index === -1) return false;
-  
-  users[index].username = newUsername;
-  await saveUsers(users);
-  return true;
+  const result = db.update(users)
+    .set({ username: newUsername, updatedAt: new Date().toISOString() })
+    .where(eq(users.username, oldUsername))
+    .run();
+  return result.changes > 0;
 }

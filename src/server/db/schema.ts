@@ -1,5 +1,30 @@
 import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 
+// 用户表
+export const users = sqliteTable('users', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  username: text('username').notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  role: text('role').notNull().default('user'),
+  balance: integer('balance').default(0),
+  trafficFlow: real('traffic_flow').default(0),
+  totalFlowGb: real('total_flow_gb').default(0),
+  usedFlowGb: real('used_flow_gb').default(0),
+  maxRules: integer('max_rules').default(0),
+  expiredAt: integer('expired_at').default(0),
+  speedLimitMbps: integer('speed_limit_mbps').default(0),
+  maxConnections: integer('max_connections').default(0),
+  maxIpAccess: integer('max_ip_access').default(0),
+  autoRenew: integer('auto_renew').default(0),
+  autoBuyTraffic: integer('auto_buy_traffic').default(0),
+  autoBuyTrafficPackageId: integer('auto_buy_traffic_package_id').default(0),
+  autoBuyTrafficThreshold: real('auto_buy_traffic_threshold').default(10),
+  renewalAmount: integer('renewal_amount').default(0),
+  baseFlow: real('base_flow').default(0),
+  createdAt: text('created_at'),
+  updatedAt: text('updated_at'),
+});
+
 // 套餐表
 export const subscriptionPackages = sqliteTable('subscription_packages', {
   id: integer('id').primaryKey({ autoIncrement: true }),

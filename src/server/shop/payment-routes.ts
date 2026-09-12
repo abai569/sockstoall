@@ -11,7 +11,7 @@ export const paymentRoutes = new Hono();
 paymentRoutes.get('/configs', (c) => {
   const configs = db.query.paymentConfigs.findMany({
     where: eq(paymentConfigs.enabled, 1),
-  });
+  }).sync();
 
   const safeConfigs = configs.map(cfg => ({
     id: cfg.id,
@@ -30,7 +30,7 @@ paymentRoutes.post('/configs', async (c) => {
 
     const existing = db.query.paymentConfigs.findFirst({
       where: eq(paymentConfigs.channel, body.channel),
-    });
+    }).sync();
 
     if (existing) {
       db.update(paymentConfigs)
@@ -58,7 +58,7 @@ paymentRoutes.post('/configs', async (c) => {
 paymentRoutes.get('/admin/configs', (c) => {
   const configs = db.query.paymentConfigs.findMany({
     orderBy: [paymentConfigs.id],
-  });
+  }).sync();
 
   return c.json({ success: true, data: configs });
 });
@@ -104,7 +104,7 @@ paymentRoutes.post('/callback/yipay', async (c) => {
 
     const order = db.query.orders.findFirst({
       where: eq(orders.orderNo, callbackResult.orderNo),
-    });
+    }).sync();
 
     if (!order || order.status !== 0) {
       return c.text('fail');
@@ -118,7 +118,7 @@ paymentRoutes.post('/callback/yipay', async (c) => {
     const pkg = JSON.parse(order.packageMeta);
 
     if (pkg.type === 'balance') {
-      const user = db.query.users.findFirst({ where: eq(sql`id`, order.userId) });
+      const user = db.query.users.findFirst({ where: eq(sql`id`, order.userId) }).sync();
       const balanceBefore = user?.balance || 0;
       const balanceAfter = balanceBefore + pkg.price;
       db.run(sql`UPDATE users SET balance = ${balanceAfter} WHERE id = ${order.userId}`);
@@ -180,7 +180,7 @@ paymentRoutes.post('/callback/usdt', async (c) => {
 
     const order = db.query.orders.findFirst({
       where: eq(orders.orderNo, callbackResult.orderNo),
-    });
+    }).sync();
 
     if (!order || order.status !== 0) {
       return c.json({ code: 1, msg: 'order not found' });
@@ -194,7 +194,7 @@ paymentRoutes.post('/callback/usdt', async (c) => {
     const pkg = JSON.parse(order.packageMeta);
 
     if (pkg.type === 'balance') {
-      const user = db.query.users.findFirst({ where: eq(sql`id`, order.userId) });
+      const user = db.query.users.findFirst({ where: eq(sql`id`, order.userId) }).sync();
       const balanceBefore = user?.balance || 0;
       const balanceAfter = balanceBefore + pkg.price;
       db.run(sql`UPDATE users SET balance = ${balanceAfter} WHERE id = ${order.userId}`);
@@ -226,12 +226,12 @@ paymentRoutes.post('/callback/usdt', async (c) => {
 // ==================== 辅助函数 ====================
 
 async function applyPackageToUser(userId: number, pkg: any, orderId: number) {
-  const user = db.query.users.findFirst({ where: eq(sql`id`, userId) });
+  const user = db.query.users.findFirst({ where: eq(sql`id`, userId) }).sync();
   if (!user) throw new Error('用户不存在');
 
   const activeSubs = db.query.userSubscriptions.findMany({
     where: and(eq(userSubscriptions.userId, userId), eq(userSubscriptions.status, 1)),
-  });
+  }).sync();
   for (const sub of activeSubs) {
     db.update(userSubscriptions)
       .set({ status: 0, updatedAt: new Date().toISOString() })

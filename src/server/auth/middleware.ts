@@ -4,6 +4,7 @@
 
 import { Context, Next } from 'hono';
 import { verifyToken } from './jwt.js';
+import { getUser } from './user-store.js';
 
 export async function authMiddleware(c: Context, next: Next) {
   const authHeader = c.req.header('Authorization');
@@ -18,7 +19,14 @@ export async function authMiddleware(c: Context, next: Next) {
   if (!payload) {
     return c.json({ success: false, error: 'Token 无效或已过期' }, 401);
   }
+
+  const user = await getUser(payload.username);
+  if (!user) {
+    return c.json({ success: false, error: '用户不存在' }, 401);
+  }
   
-  c.set('username', payload.username);
+  c.set('username', user.username);
+  c.set('userId', user.id);
+  c.set('role', user.role);
   await next();
 }

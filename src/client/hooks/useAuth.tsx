@@ -1,9 +1,11 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { api } from '../api/client';
+import { api, authApi } from '../api/client';
 
 interface AuthContextType {
   token: string | null;
   username: string | null;
+  role: string | null;
+  isAdmin: boolean;
   login: (token: string, username: string) => void;
   logout: () => void;
 }
@@ -16,6 +18,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
   const [username, setUsername] = useState<string | null>(() => {
     return localStorage.getItem('username');
+  });
+  const [role, setRole] = useState<string | null>(() => {
+    return localStorage.getItem('role');
   });
 
   // 初始化时设置 axios header（页面刷新时）
@@ -38,8 +43,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setToken(null);
     setUsername(null);
+    setRole(null);
     localStorage.removeItem('token');
     localStorage.removeItem('username');
+    localStorage.removeItem('role');
     // 立即清除 axios header
     delete api.defaults.headers.common['Authorization'];
   };
@@ -48,13 +55,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (token) {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      authApi.getMe()
+        .then((res) => {
+          const data = res.data.data;
+          if (data?.username) {
+            setUsername(data.username);
+            localStorage.setItem('username', data.username);
+          }
+          if (data?.role) {
+            setRole(data.role);
+            localStorage.setItem('role', data.role);
+          }
+        })
+        .catch(() => {});
     } else {
       delete api.defaults.headers.common['Authorization'];
+      setRole(null);
     }
   }, [token]);
 
   return (
-    <AuthContext.Provider value={{ token, username, login, logout }}>
+    <AuthContext.Provider value={{ token, username, role, isAdmin: role === 'admin', login, logout }}>
       {children}
     </AuthContext.Provider>
   );
