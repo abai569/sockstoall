@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Input, Switch, Select, message, Tag } from 'antd';
+import { Table, Button, Modal, Form, Input, Switch, Select, message, Tag, Row, Col } from 'antd';
 import { PlusOutlined, EditOutlined } from '@ant-design/icons';
 import { api } from '../api/client';
 
@@ -78,62 +78,94 @@ export default function AdminPaymentConfigs() {
   const renderFields = (channel: string) => {
     if (channel === 'YIPAY') {
       return (
-        <>
-          <Form.Item name="gateway_url" label="网关地址" rules={[{ required: true }]}>
-            <Input placeholder="https://pay.example.com" />
-          </Form.Item>
-          <Form.Item name="pid" label="商户 ID (PID)" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="key" label="商户密钥" rules={[{ required: true }]}>
-            <Input.Password />
-          </Form.Item>
-          <Form.Item name="notify_url" label="异步回调地址" rules={[{ required: true }]}>
-            <Input placeholder="https://yourdomain.com/api/shop/callback/yipay" />
-          </Form.Item>
-          <Form.Item name="return_url" label="同步跳转地址">
-            <Input />
-          </Form.Item>
-          <Form.Item name="sign_mode" label="签名模式" initialValue="epay">
-            <Select options={[{ value: 'epay', label: '标准易支付' }, { value: 'mpay', label: '码支付' }]} />
-          </Form.Item>
-          <Form.Item name="enable_alipay" label="启用支付宝" valuePropName="checked" initialValue={true}>
-            <Switch />
-          </Form.Item>
-          <Form.Item name="enable_wxpay" label="启用微信支付" valuePropName="checked" initialValue={true}>
-            <Switch />
-          </Form.Item>
-        </>
+        <Row gutter={[16, 0]}>
+          <Col xs={24}>
+            <Form.Item name="gateway_url" label="网关地址" rules={[{ required: true }]}>
+              <Input placeholder="https://pay.example.com" />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item name="pid" label="商户 ID (PID)" rules={[{ required: true }]}>
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item name="key" label="商户密钥" rules={[{ required: true }]}>
+              <Input.Password />
+            </Form.Item>
+          </Col>
+          <Col xs={24}>
+            <Form.Item name="notify_url" label="异步回调地址" rules={[{ required: true }]}>
+              <Input placeholder="https://yourdomain.com/api/shop/callback/yipay" />
+            </Form.Item>
+          </Col>
+          <Col xs={24}>
+            <Form.Item name="return_url" label="同步跳转地址">
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item name="sign_mode" label="签名模式" initialValue="epay">
+              <Select options={[{ value: 'epay', label: '标准易支付' }, { value: 'mpay', label: '码支付' }]} />
+            </Form.Item>
+          </Col>
+          <Col xs={12} sm={6}>
+            <Form.Item name="enable_alipay" label="启用支付宝" valuePropName="checked" initialValue={true}>
+              <Switch />
+            </Form.Item>
+          </Col>
+          <Col xs={12} sm={6}>
+            <Form.Item name="enable_wxpay" label="启用微信支付" valuePropName="checked" initialValue={true}>
+              <Switch />
+            </Form.Item>
+          </Col>
+        </Row>
       );
     }
     if (channel === 'USDT') {
       return (
-        <>
-          <Form.Item name="api_url" label="GMPay API 地址" rules={[{ required: true }]}>
-            <Input placeholder="https://gmpay.example.com" />
-          </Form.Item>
-          <Form.Item name="pid" label="商户 PID" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="secret_key" label="密钥" rules={[{ required: true }]}>
-            <Input.Password />
-          </Form.Item>
-          <Form.Item name="notify_url" label="异步回调地址" rules={[{ required: true }]}>
-            <Input placeholder="https://yourdomain.com/api/shop/callback/usdt" />
-          </Form.Item>
-          <Form.Item name="return_url" label="同步跳转地址">
-            <Input />
-          </Form.Item>
-          <Form.Item name="currency" label="货币" initialValue="cny">
-            <Select options={[{ value: 'cny', label: 'CNY' }, { value: 'usd', label: 'USD' }]} />
-          </Form.Item>
-          <Form.Item name="token" label="币种" initialValue="usdt">
-            <Select options={[{ value: 'usdt', label: 'USDT' }]} />
-          </Form.Item>
-          <Form.Item name="network" label="支付网络" initialValue="tron">
-            <Input placeholder="tron,bsc" />
-          </Form.Item>
-        </>
+        <Row gutter={[16, 0]}>
+          <Col xs={24}>
+            <Form.Item name="api_url" label="GMPay API 地址" rules={[{ required: true }]}>
+              <Input placeholder="https://gmpay.example.com" />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item name="pid" label="商户 PID" rules={[{ required: true }]}>
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item name="secret_key" label="密钥" rules={[{ required: true }]}>
+              <Input.Password />
+            </Form.Item>
+          </Col>
+          <Col xs={24}>
+            <Form.Item name="notify_url" label="异步回调地址" rules={[{ required: true }]}>
+              <Input placeholder="https://yourdomain.com/api/shop/callback/usdt" />
+            </Form.Item>
+          </Col>
+          <Col xs={24}>
+            <Form.Item name="return_url" label="同步跳转地址">
+              <Input />
+            </Form.Item>
+          </Col>
+          <Col xs={12} sm={8}>
+            <Form.Item name="currency" label="货币" initialValue="cny">
+              <Select options={[{ value: 'cny', label: 'CNY' }, { value: 'usd', label: 'USD' }]} />
+            </Form.Item>
+          </Col>
+          <Col xs={12} sm={8}>
+            <Form.Item name="token" label="币种" initialValue="usdt">
+              <Select options={[{ value: 'usdt', label: 'USDT' }]} />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={8}>
+            <Form.Item name="network" label="支付网络" initialValue="tron">
+              <Input placeholder="tron,bsc" />
+            </Form.Item>
+          </Col>
+        </Row>
       );
     }
     return null;
@@ -147,14 +179,20 @@ export default function AdminPaymentConfigs() {
       </div>
       <Table columns={columns} dataSource={configs} rowKey="id" loading={loading} pagination={false} />
 
-      <Modal title={editing ? '编辑支付配置' : '添加支付渠道'} open={modalOpen} onOk={handleSave} onCancel={() => setModalOpen(false)} okText="保存" cancelText="取消" width={600}>
+      <Modal title={editing ? '编辑支付配置' : '添加支付渠道'} open={modalOpen} onOk={handleSave} onCancel={() => setModalOpen(false)} okText="保存" cancelText="取消" width={640}>
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item name="channel" label="支付渠道" rules={[{ required: true }]} extra={editing ? '不可修改' : ''}>
-            <Select options={CHANNELS} disabled={!!editing} />
-          </Form.Item>
-          <Form.Item name="enabled" label="启用" valuePropName="checked" initialValue={true}>
-            <Switch />
-          </Form.Item>
+          <Row gutter={[16, 0]}>
+            <Col xs={24} sm={16}>
+              <Form.Item name="channel" label="支付渠道" rules={[{ required: true }]} extra={editing ? '不可修改' : ''}>
+                <Select options={CHANNELS} disabled={!!editing} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={8}>
+              <Form.Item name="enabled" label="启用" valuePropName="checked" initialValue={true}>
+                <Switch checkedChildren="启用" unCheckedChildren="禁用" />
+              </Form.Item>
+            </Col>
+          </Row>
           {form.getFieldValue('channel') && renderFields(form.getFieldValue('channel'))}
         </Form>
       </Modal>

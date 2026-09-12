@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Space, Tag, Modal, Form, Input, InputNumber, Select, Switch, message, Spin, Popconfirm } from 'antd';
+import { Table, Button, Space, Tag, Modal, Form, Input, InputNumber, Select, Switch, message, Spin, Popconfirm, Row, Col } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { api } from '../api/client';
 
@@ -188,65 +188,82 @@ export default function AdminPackages() {
         okText={editId ? '保存' : '创建'}
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item name="name" label="套餐名称" rules={[{ required: true, message: '请输入名称' }]}>
-            <Input placeholder="例如：月度套餐" />
-          </Form.Item>
-          
-          <Form.Item name="type" label="套餐类型" rules={[{ required: true }]}>
-            <Select>
-              <Select.Option value="subscription">订阅套餐</Select.Option>
-              <Select.Option value="traffic">流量套餐</Select.Option>
-              <Select.Option value="balance">余额套餐</Select.Option>
-            </Select>
-          </Form.Item>
-          
-          <Form.Item name="description" label="描述">
-            <Input.TextArea rows={2} placeholder="套餐描述" />
-          </Form.Item>
-          
-          <Form.Item name="price" label="价格（分）" rules={[{ required: true, message: '请输入价格' }]}>
-            <InputNumber min={0} style={{ width: '100%' }} placeholder="100 = 1 元" />
-          </Form.Item>
-          
-          <Form.Item name="validityDays" label="有效期（天）" extra="0 表示永久">
-            <InputNumber min={0} style={{ width: '100%' }} />
-          </Form.Item>
-          
-          <Form.Item name="trafficLimitGb" label="流量配额（GB）" extra="0 表示无限">
-            <InputNumber min={0} style={{ width: '100%' }} />
-          </Form.Item>
-          
-          <Form.Item name="maxNodes" label="最大节点数" extra="0 表示不改变用户当前设置">
-            <InputNumber min={0} style={{ width: '100%' }} />
-          </Form.Item>
-
-          <Form.Item name="maxRules" label="最大规则数" extra="0 表示无限">
-            <InputNumber min={0} style={{ width: '100%' }} />
-          </Form.Item>
-          
-          <Form.Item name="speedLimitMbps" label="限速（Mbps）" extra="0 表示无限">
-            <InputNumber min={0} style={{ width: '100%' }} />
-          </Form.Item>
-          
-          <Form.Item name="maxConnections" label="最大连接数" extra="0 表示无限">
-            <InputNumber min={0} style={{ width: '100%' }} />
-          </Form.Item>
-          
-          <Form.Item name="stock" label="库存" extra="-1 表示无限">
-            <InputNumber min={-1} style={{ width: '100%' }} />
-          </Form.Item>
-          
-          <Form.Item name="enabled" label="启用" valuePropName="checked">
-            <Switch checkedChildren="启用" unCheckedChildren="禁用" />
-          </Form.Item>
-          
-          <Form.Item name="shopVisible" label="商城可见" valuePropName="checked">
-            <Switch checkedChildren="可见" unCheckedChildren="隐藏" />
-          </Form.Item>
-          
-          <Form.Item name="recommended" label="推荐" valuePropName="checked">
-            <Switch checkedChildren="是" unCheckedChildren="否" />
-          </Form.Item>
+          <Row gutter={[16, 0]}>
+            <Col xs={24} sm={12}>
+              <Form.Item name="name" label="套餐名称" rules={[{ required: true, message: '请输入名称' }]}>
+                <Input placeholder="例如：月度套餐" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item name="type" label="套餐类型" rules={[{ required: true }]}>
+                <Select options={[
+                  { value: 'subscription', label: '订阅套餐' },
+                  { value: 'traffic', label: '流量套餐' },
+                  { value: 'balance', label: '余额套餐' },
+                ]} />
+              </Form.Item>
+            </Col>
+            <Col xs={24}>
+              <Form.Item name="description" label="描述">
+                <Input.TextArea rows={2} placeholder="套餐描述" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item name="price" label="价格（分）" rules={[{ required: true, message: '请输入价格' }]}>
+                <InputNumber min={0} style={{ width: '100%' }} placeholder="100 = 1 元" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item name="validityDays" label="有效期（天）" extra="0 表示永久">
+                <InputNumber min={0} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item name="trafficLimitGb" label="流量配额（GB）" extra="0 表示无限">
+                <InputNumber min={0} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item name="maxNodes" label="最大节点数" extra="0 表示不改变用户当前设置">
+                <InputNumber min={0} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item name="maxRules" label="最大规则数" extra="0 表示无限">
+                <InputNumber min={0} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item name="speedLimitMbps" label="限速（Mbps）" extra="0 表示无限">
+                <InputNumber min={0} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item name="maxConnections" label="最大连接数" extra="0 表示无限">
+                <InputNumber min={0} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item name="stock" label="库存" extra="-1 表示无限">
+                <InputNumber min={-1} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col xs={8} sm={8}>
+              <Form.Item name="enabled" label="启用" valuePropName="checked">
+                <Switch checkedChildren="启用" unCheckedChildren="禁用" />
+              </Form.Item>
+            </Col>
+            <Col xs={8} sm={8}>
+              <Form.Item name="shopVisible" label="商城可见" valuePropName="checked">
+                <Switch checkedChildren="可见" unCheckedChildren="隐藏" />
+              </Form.Item>
+            </Col>
+            <Col xs={8} sm={8}>
+              <Form.Item name="recommended" label="推荐" valuePropName="checked">
+                <Switch checkedChildren="是" unCheckedChildren="否" />
+              </Form.Item>
+            </Col>
+          </Row>
         </Form>
       </Modal>
     </div>

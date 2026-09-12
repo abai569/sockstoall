@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Tag, Modal, Form, Input, message, Popconfirm, Typography } from 'antd';
+import { Table, Button, Tag, Modal, Form, Input, message, Popconfirm, Typography, Row, Col } from 'antd';
 import { PlusOutlined, DeleteOutlined, CopyOutlined, ReloadOutlined } from '@ant-design/icons';
 import { api } from '../api/client';
 
@@ -127,12 +127,18 @@ export default function AdminServers() {
 
       <Modal title="添加服务器" open={modalOpen} onOk={handleCreate} onCancel={() => setModalOpen(false)} okText="创建" cancelText="取消">
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item name="name" label="名称" rules={[{ required: true, message: '请输入名称' }]}>
-            <Input placeholder="例如：东京节点" />
-          </Form.Item>
-          <Form.Item name="address" label="公网地址" rules={[{ required: true, message: '请输入地址' }]}>
-            <Input placeholder="远程服务器公网 IP 或域名" />
-          </Form.Item>
+          <Row gutter={[16, 0]}>
+            <Col xs={24} sm={12}>
+              <Form.Item name="name" label="名称" rules={[{ required: true, message: '请输入名称' }]}>
+                <Input placeholder="例如：东京节点" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item name="address" label="公网地址" rules={[{ required: true, message: '请输入地址' }]}>
+                <Input placeholder="远程服务器公网 IP 或域名" />
+              </Form.Item>
+            </Col>
+          </Row>
         </Form>
       </Modal>
 

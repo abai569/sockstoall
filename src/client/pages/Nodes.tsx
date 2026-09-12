@@ -290,28 +290,28 @@ export default function Nodes() {
         okText={editId ? '保存' : '创建'}
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-          <Row gutter={16}>
-            <Col xs={24} sm={12}>
+          <Row gutter={[16, 0]}>
+            <Col xs={12} sm={12}>
               <Form.Item name="name" label="节点名称" rules={[{ required: true, message: '请输入节点名称' }]}>
                 <Input placeholder="例如：我的节点" />
               </Form.Item>
             </Col>
-            <Col xs={24} sm={12}>
+            <Col xs={12} sm={12}>
               <Form.Item name="protocol" label="协议" rules={[{ required: true }]}>
                 <Select options={protocolOptions} onChange={(v) => setProtocol(v)} />
               </Form.Item>
             </Col>
-            <Col xs={24} sm={12}>
+            <Col xs={12} sm={12}>
               <Form.Item name="serverId" label="所属服务器" rules={[{ required: true }]}>
                 <Select options={servers.map(s => ({ value: s.id, label: s.name }))} />
               </Form.Item>
             </Col>
-            <Col xs={24} sm={12}>
+            <Col xs={12} sm={12}>
               <Form.Item name="port" label="端口" extra="留空则从 30000-65000 随机生成">
                 <InputNumber min={1} max={65535} style={{ width: '100%' }} placeholder="留空随机" />
               </Form.Item>
             </Col>
-            <Col xs={24} sm={12}>
+            <Col xs={12} sm={12}>
               <Form.Item name="listen" label="监听地址">
                 <Input placeholder="0.0.0.0" />
               </Form.Item>
@@ -327,13 +327,13 @@ export default function Nodes() {
 
           {protocol === 'shadowsocks' && (
             <>
-              <Row gutter={16}>
-                <Col xs={24} sm={12}>
+              <Row gutter={[16, 0]}>
+                <Col xs={12} sm={12}>
                   <Form.Item name={['config', 'password']} label="密码" rules={[{ required: true }]}>
                     <Password placeholder="密码" />
                   </Form.Item>
                 </Col>
-                <Col xs={24} sm={12}>
+                <Col xs={12} sm={12}>
                   <Form.Item name={['config', 'encryption']} label="加密方式" rules={[{ required: true }]} initialValue="aes-256-gcm">
                     <Select options={ssEncryptionOptions} />
                   </Form.Item>
@@ -344,12 +344,12 @@ export default function Nodes() {
 
           {protocol === 'vmess' && (
             <>
-              <Row gutter={16}>
+              <Row gutter={[16, 0]}>
                 <Col span={24}><Form.Item name={['config', 'uuid']} label="UUID" extra="留空自动生成"><Input placeholder="留空自动生成" /></Form.Item></Col>
-                <Col xs={24} sm={12}><Form.Item name={['config', 'alterId']} label="AlterId" initialValue={0}><InputNumber min={0} max={65535} style={{ width: '100%' }} /></Form.Item></Col>
-                <Col xs={24} sm={12}><Form.Item name={['config', 'encryption']} label="加密" initialValue="auto"><Select options={[{ value: 'auto', label: 'Auto' }, { value: 'aes-128-gcm', label: 'AES-128-GCM' }, { value: 'chacha20-poly1305', label: 'ChaCha20-Poly1305' }, { value: 'none', label: 'None' }, { value: 'zero', label: 'Zero' }]} /></Form.Item></Col>
-                <Col xs={24} sm={12}><Form.Item name={['config', 'transport']} label="传输协议" initialValue="tcp"><Select options={transportOptions} onChange={(v) => setTransport(v)} /></Form.Item></Col>
-                <Col xs={24} sm={12}><Form.Item name={['config', 'tls']} label="TLS" initialValue="none"><Select options={[{ value: 'none', label: '无' }, { value: 'tls', label: 'TLS' }]} onChange={(v) => setTlsType(v)} /></Form.Item></Col>
+                <Col xs={12} sm={12}><Form.Item name={['config', 'alterId']} label="AlterId" initialValue={0}><InputNumber min={0} max={65535} style={{ width: '100%' }} /></Form.Item></Col>
+                <Col xs={12} sm={12}><Form.Item name={['config', 'encryption']} label="加密" initialValue="auto"><Select options={[{ value: 'auto', label: 'Auto' }, { value: 'aes-128-gcm', label: 'AES-128-GCM' }, { value: 'chacha20-poly1305', label: 'ChaCha20-Poly1305' }, { value: 'none', label: 'None' }, { value: 'zero', label: 'Zero' }]} /></Form.Item></Col>
+                <Col xs={12} sm={12}><Form.Item name={['config', 'transport']} label="传输协议" initialValue="tcp"><Select options={transportOptions} onChange={(v) => setTransport(v)} /></Form.Item></Col>
+                <Col xs={12} sm={12}><Form.Item name={['config', 'tls']} label="TLS" initialValue="none"><Select options={[{ value: 'none', label: '无' }, { value: 'tls', label: 'TLS' }]} onChange={(v) => setTlsType(v)} /></Form.Item></Col>
               </Row>
               {tlsType === 'tls' && (
                 <>
@@ -371,11 +371,11 @@ export default function Nodes() {
 
           {protocol === 'vless' && (
             <>
-              <Row gutter={16}>
+              <Row gutter={[16, 0]}>
                 <Col span={24}><Form.Item name={['config', 'uuid']} label="UUID" extra="留空自动生成"><Input placeholder="留空自动生成" /></Form.Item></Col>
-                <Col xs={24} sm={12}><Form.Item name={['config', 'flow']} label="Flow" initialValue="none"><Select options={[{ value: 'none', label: 'None' }, { value: 'xtls-rprx-vision', label: 'xtls-rprx-vision' }, { value: 'xtls-rprx-vision-udp443', label: 'xtls-rprx-vision-udp443' }]} /></Form.Item></Col>
-                <Col xs={24} sm={12}><Form.Item name={['config', 'transport']} label="传输协议" initialValue="tcp"><Select options={transportOptions} onChange={(v) => setTransport(v)} /></Form.Item></Col>
-                <Col xs={24} sm={12}><Form.Item name={['config', 'tls']} label="安全" initialValue="none"><Select options={tlsOptions} onChange={(v) => setTlsType(v)} /></Form.Item></Col>
+                <Col xs={12} sm={12}><Form.Item name={['config', 'flow']} label="Flow" initialValue="none"><Select options={[{ value: 'none', label: 'None' }, { value: 'xtls-rprx-vision', label: 'xtls-rprx-vision' }, { value: 'xtls-rprx-vision-udp443', label: 'xtls-rprx-vision-udp443' }]} /></Form.Item></Col>
+                <Col xs={12} sm={12}><Form.Item name={['config', 'transport']} label="传输协议" initialValue="tcp"><Select options={transportOptions} onChange={(v) => setTransport(v)} /></Form.Item></Col>
+                <Col xs={12} sm={12}><Form.Item name={['config', 'tls']} label="安全" initialValue="none"><Select options={tlsOptions} onChange={(v) => setTlsType(v)} /></Form.Item></Col>
               </Row>
               
               {/* TLS 配置 */}
@@ -441,9 +441,9 @@ export default function Nodes() {
 
           {protocol === 'socks' && (
             <>
-              <Row gutter={16}>
-                <Col xs={24} sm={12}><Form.Item name={['config', 'username']} label="用户名"><Input placeholder="可选" /></Form.Item></Col>
-                <Col xs={24} sm={12}><Form.Item name={['config', 'password']} label="密码"><Password placeholder="可选" /></Form.Item></Col>
+              <Row gutter={[16, 0]}>
+                <Col xs={12} sm={12}><Form.Item name={['config', 'username']} label="用户名"><Input placeholder="可选" /></Form.Item></Col>
+                <Col xs={12} sm={12}><Form.Item name={['config', 'password']} label="密码"><Password placeholder="可选" /></Form.Item></Col>
               </Row>
             </>
           )}

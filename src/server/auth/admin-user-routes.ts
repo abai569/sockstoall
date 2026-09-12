@@ -26,6 +26,7 @@ adminUserRoutes.get('/users', (c) => {
       trafficLimitGb: u.trafficLimitGb,
       expiredAt: u.expiredAt,
       maxNodes: u.maxNodes,
+      maxRules: u.maxRules,
       nodeCount: countNodesByUser(u.id),
       createdAt: u.createdAt,
     }))
@@ -40,6 +41,7 @@ adminUserRoutes.post('/users', async (c) => {
       password: string;
       role?: string;
       maxNodes?: number;
+      maxRules?: number;
       trafficLimitGb?: number;
       expiredAt?: number;
     }>();
@@ -67,6 +69,7 @@ adminUserRoutes.post('/users', async (c) => {
 
     const updateData: any = {};
     if (body.maxNodes !== undefined) updateData.maxNodes = body.maxNodes;
+    if (body.maxRules !== undefined) updateData.maxRules = body.maxRules;
     if (body.trafficLimitGb !== undefined) updateData.trafficLimitGb = body.trafficLimitGb;
     if (body.expiredAt !== undefined) updateData.expiredAt = body.expiredAt;
     if (Object.keys(updateData).length > 0) {
@@ -91,6 +94,7 @@ adminUserRoutes.put('/users/:id', async (c) => {
     trafficLimitGb?: number;
     expiredAt?: number;
     maxNodes?: number;
+    maxRules?: number;
   }>();
   
   const user = db.query.users.findFirst({
@@ -106,6 +110,7 @@ adminUserRoutes.put('/users/:id', async (c) => {
   if (body.trafficLimitGb !== undefined) updateData.trafficLimitGb = body.trafficLimitGb;
   if (body.expiredAt !== undefined) updateData.expiredAt = body.expiredAt;
   if (body.maxNodes !== undefined) updateData.maxNodes = body.maxNodes;
+  if (body.maxRules !== undefined) updateData.maxRules = body.maxRules;
   
   db.update(users)
     .set(updateData)

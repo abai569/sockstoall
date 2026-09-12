@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Tag, Modal, Form, Input, InputNumber, DatePicker, Switch, Select, message, Popconfirm, Space } from 'antd';
+import { Table, Button, Tag, Modal, Form, Input, InputNumber, DatePicker, Switch, Select, message, Popconfirm, Space, Row, Col } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, CloudServerOutlined } from '@ant-design/icons';
 import { api } from '../api/client';
 import dayjs from 'dayjs';
@@ -33,7 +33,7 @@ export default function AdminUsers() {
   const openCreate = () => {
     setEditingUser(null);
     form.resetFields();
-    form.setFieldsValue({ status: true, role: 'user', maxNodes: 5, trafficLimitGb: 0 });
+    form.setFieldsValue({ status: true, role: 'user', maxNodes: 5, maxRules: 0, trafficLimitGb: 0 });
     setModalOpen(true);
   };
 
@@ -42,6 +42,7 @@ export default function AdminUsers() {
     form.setFieldsValue({
       status: user.status === 1,
       maxNodes: user.maxNodes,
+      maxRules: user.maxRules,
       trafficLimitGb: user.trafficLimitGb,
       expiredAt: user.expiredAt ? dayjs(user.expiredAt) : null,
     });
@@ -59,6 +60,7 @@ export default function AdminUsers() {
           trafficLimitGb: values.trafficLimitGb,
           expiredAt: values.expiredAt ? values.expiredAt.valueOf() : 0,
           maxNodes: values.maxNodes,
+          maxRules: values.maxRules,
         });
         message.success('更新成功');
       } else {
@@ -70,6 +72,7 @@ export default function AdminUsers() {
           trafficLimitGb: values.trafficLimitGb,
           expiredAt: values.expiredAt ? values.expiredAt.valueOf() : 0,
           maxNodes: values.maxNodes,
+          maxRules: values.maxRules,
         });
         message.success('创建成功');
       }
@@ -168,31 +171,52 @@ export default function AdminUsers() {
         okText={editingUser ? '保存' : '创建'}
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-          {!editingUser && (
-            <>
-              <Form.Item name="username" label="用户名" rules={[{ required: true, message: '请输入用户名' }, { min: 3, message: '至少 3 个字符' }]}>
-                <Input placeholder="用户名" />
+          <Row gutter={[16, 0]}>
+            {!editingUser && (
+              <>
+                <Col xs={24} sm={12}>
+                  <Form.Item name="username" label="用户名" rules={[{ required: true, message: '请输入用户名' }, { min: 3, message: '至少 3 个字符' }]}>
+                    <Input placeholder="用户名" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name="password" label="密码" rules={[{ required: true, message: '请输入密码' }, { min: 6, message: '至少 6 个字符' }]}>
+                    <Input.Password placeholder="密码" />
+                  </Form.Item>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Form.Item name="role" label="角色" rules={[{ required: true }]}>
+                    <Select options={[{ value: 'user', label: '普通用户' }, { value: 'admin', label: '管理员' }]} />
+                  </Form.Item>
+                </Col>
+              </>
+            )}
+            <Col xs={24} sm={12}>
+              <Form.Item name="status" label="启用" valuePropName="checked">
+                <Switch checkedChildren="启用" unCheckedChildren="禁用" />
               </Form.Item>
-              <Form.Item name="password" label="密码" rules={[{ required: true, message: '请输入密码' }, { min: 6, message: '至少 6 个字符' }]}>
-                <Input.Password placeholder="密码" />
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item name="trafficLimitGb" label="流量配额 (GB)" extra="0 表示不限制">
+                <InputNumber min={0} style={{ width: '100%' }} />
               </Form.Item>
-              <Form.Item name="role" label="角色" rules={[{ required: true }]}>
-                <Select options={[{ value: 'user', label: '普通用户' }, { value: 'admin', label: '管理员' }]} />
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item name="maxNodes" label="最大节点数" extra="-1 / 0 表示无限制">
+                <InputNumber min={-1} style={{ width: '100%' }} />
               </Form.Item>
-            </>
-          )}
-          <Form.Item name="status" label="启用" valuePropName="checked">
-            <Switch />
-          </Form.Item>
-          <Form.Item name="trafficLimitGb" label="流量配额 (GB)">
-            <InputNumber min={0} style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="maxNodes" label="最大节点数" extra="-1 表示无限制">
-            <InputNumber min={-1} style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="expiredAt" label="到期时间">
-            <DatePicker style={{ width: '100%' }} />
-          </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item name="maxRules" label="最大规则数" extra="0 表示无限制">
+                <InputNumber min={0} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item name="expiredAt" label="到期时间">
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
         </Form>
       </Modal>
 

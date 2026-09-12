@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Space, Modal, Form, Input, InputNumber, message, Spin, Popconfirm } from 'antd';
+import { Table, Button, Space, Modal, Form, Input, InputNumber, message, Spin, Popconfirm, Row, Col } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { api } from '../api/client';
 
@@ -139,21 +139,28 @@ export default function AdminPackageGroups() {
         okText={editId ? '保存' : '创建'}
       >
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-          <Form.Item name="name" label="分组名称" rules={[{ required: true, message: '请输入名称' }]}>
-            <Input placeholder="例如：月度套餐" />
-          </Form.Item>
-
-          <Form.Item name="description" label="描述">
-            <Input.TextArea rows={2} placeholder="分组描述" />
-          </Form.Item>
-
-          <Form.Item name="color" label="颜色">
-            <Input type="color" style={{ width: '100%', height: 40 }} />
-          </Form.Item>
-
-          <Form.Item name="sortOrder" label="排序" extra="数字越小越靠前">
-            <InputNumber min={0} style={{ width: '100%' }} />
-          </Form.Item>
+          <Row gutter={[16, 0]}>
+            <Col xs={24} sm={12}>
+              <Form.Item name="name" label="分组名称" rules={[{ required: true, message: '请输入名称' }]}>
+                <Input placeholder="例如：月度套餐" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item name="sortOrder" label="排序" extra="数字越小越靠前">
+                <InputNumber min={0} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col xs={24}>
+              <Form.Item name="description" label="描述">
+                <Input.TextArea rows={2} placeholder="分组描述" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item name="color" label="颜色">
+                <Input type="color" style={{ width: '100%', height: 40 }} />
+              </Form.Item>
+            </Col>
+          </Row>
         </Form>
       </Modal>
     </div>
