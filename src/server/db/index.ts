@@ -174,6 +174,20 @@ export function initDatabase() {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id)
     );
+
+    CREATE TABLE IF NOT EXISTS servers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      address TEXT NOT NULL,
+      agent_token TEXT NOT NULL UNIQUE,
+      status TEXT NOT NULL DEFAULT 'offline',
+      last_heartbeat INTEGER,
+      xray_version TEXT,
+      os TEXT,
+      arch TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
   `);
 
   // 兼容旧数据库：补齐后续新增的字段

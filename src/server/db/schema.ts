@@ -148,3 +148,18 @@ export const balanceLogs = sqliteTable('balance_logs', {
   signature: text('signature'),  // HMAC-SHA256
   createdAt: text('created_at').default(new Date().toISOString()),
 });
+
+// 服务器表
+export const servers = sqliteTable('servers', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
+  address: text('address').notNull(),  // IP 或域名
+  agentToken: text('agent_token').notNull().unique(),  // Agent 认证令牌
+  status: text('status').notNull().default('offline'),  // online/offline
+  lastHeartbeat: integer('last_heartbeat'),  // 最后心跳时间戳
+  xrayVersion: text('xray_version'),
+  os: text('os'),
+  arch: text('arch'),
+  createdAt: text('created_at').default(new Date().toISOString()),
+  updatedAt: text('updated_at').default(new Date().toISOString()),
+});
