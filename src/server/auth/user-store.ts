@@ -13,6 +13,10 @@ function toUser(row: any): User {
     username: row.username,
     passwordHash: row.passwordHash,
     role: row.role || 'user',
+    status: row.status ?? 1,
+    maxNodes: row.maxNodes ?? 0,
+    trafficLimitGb: row.trafficLimitGb ?? 0,
+    expiredAt: row.expiredAt ?? 0,
     createdAt: row.createdAt || '',
   };
 }

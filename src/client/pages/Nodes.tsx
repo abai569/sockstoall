@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Table, Button, Space, Tag, Popconfirm, message, Typography, Modal, Input, Tooltip, QRCode, Switch, Form, Select, InputNumber, Divider, Row, Col } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, LinkOutlined, QrcodeOutlined, CopyOutlined } from '@ant-design/icons';
-import { nodeApi, linkApi, api } from '../api/client';
+import { nodeApi, linkApi, api, authApi } from '../api/client';
 import type { NodeProtocol } from '../../shared/types';
 
 const { Title, Paragraph } = Typography;
@@ -75,6 +75,7 @@ export default function Nodes() {
   const [selectedNode, setSelectedNode] = useState<NodeWithLink | null>(null);
   const [servers, setServers] = useState<any[]>([]);
   const [filterServerId, setFilterServerId] = useState<number | 'all'>('all');
+  const [quota, setQuota] = useState<{ maxNodes: number; nodeCount: number; role?: string } | null>(null);
 
   const serverMap = Object.fromEntries(servers.map(s => [s.id, s.name]));
 
@@ -91,8 +92,12 @@ export default function Nodes() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const res = await nodeApi.list(filterServerId === 'all' ? undefined : filterServerId);
+      const [res, meRes] = await Promise.all([
+        nodeApi.list(filterServerId === 'all' ? undefined : filterServerId),
+        authApi.getMe(),
+      ]);
       setNodes(res.data.data?.items || []);
+      setQuota(meRes.data.data);
     } catch (error) { message.error('加载节点失败'); }
     finally { setLoading(false); }
   };
@@ -236,7 +241,14 @@ export default function Nodes() {
   return (
     <div>
       <div className="page-toolbar" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
-        <Title level={4} style={{ margin: 0 }}>节点管理</Title>
+        <Space>
+          <Title level={4} style={{ margin: 0 }}>节点管理</Title>
+          {quota && quota.role !== 'admin' && (
+            <Tag color="blue">
+              节点用量：{quota.nodeCount} / {quota.maxNodes > 0 ? quota.maxNodes : '无限制'}
+            </Tag>
+          )}
+        </Space>
         <Space>
           <Select
             value={filterServerId}

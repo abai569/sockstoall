@@ -37,6 +37,7 @@ interface BaseNode {
   listen?: string; // 监听地址，默认 0.0.0.0
   enabled: boolean; // 是否启用
   serverId?: number; // 所属服务器，默认 1（本机）
+  userId?: number; // 所有者用户，默认 1（管理员）
   remark?: string;
   createdAt: string;
   updatedAt: string;
@@ -160,6 +161,10 @@ export interface User {
   username: string;
   passwordHash: string;
   role: string;
+  status?: number;
+  maxNodes?: number;
+  trafficLimitGb?: number;
+  expiredAt?: number;
   createdAt: string;
 }
 

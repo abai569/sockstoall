@@ -48,7 +48,7 @@ export default function AdminPaymentConfigs() {
       const values = await form.validateFields();
       const { channel, enabled, ...configFields } = values;
       const body = { channel, config: JSON.stringify(configFields), enabled: enabled ? 1 : 0 };
-      const res = await api.post('/shop/configs', body);
+      const res = await api.post('/shop/admin/configs', body);
       if (res.data.success) {
         message.success('保存成功');
         setModalOpen(false);

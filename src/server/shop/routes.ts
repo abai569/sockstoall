@@ -45,8 +45,16 @@ shopRoutes.get('/package-groups', (c) => {
 
 // ==================== 管理员接口 ====================
 
+// 套餐列表（管理员，含下架）
+shopRoutes.get('/admin/packages', (c) => {
+  const packages = db.query.subscriptionPackages.findMany({
+    orderBy: [subscriptionPackages.sortOrder, subscriptionPackages.id],
+  }).sync();
+  return c.json({ success: true, data: packages });
+});
+
 // 创建套餐
-shopRoutes.post('/packages', async (c) => {
+shopRoutes.post('/admin/packages', async (c) => {
   try {
     const body = await c.req.json();
     const now = new Date().toISOString();
@@ -65,7 +73,7 @@ shopRoutes.post('/packages', async (c) => {
 });
 
 // 更新套餐
-shopRoutes.put('/packages/:id', async (c) => {
+shopRoutes.put('/admin/packages/:id', async (c) => {
   try {
     const id = parseInt(c.req.param('id'));
     const body = await c.req.json();
@@ -87,7 +95,7 @@ shopRoutes.put('/packages/:id', async (c) => {
 });
 
 // 删除套餐
-shopRoutes.delete('/packages/:id', (c) => {
+shopRoutes.delete('/admin/packages/:id', (c) => {
   const id = parseInt(c.req.param('id'));
   const result = db.delete(subscriptionPackages)
     .where(eq(subscriptionPackages.id, id))
@@ -100,8 +108,16 @@ shopRoutes.delete('/packages/:id', (c) => {
   return c.json({ success: true });
 });
 
+// 分组列表（管理员）
+shopRoutes.get('/admin/package-groups', (c) => {
+  const groups = db.query.packageGroups.findMany({
+    orderBy: [packageGroups.sortOrder, packageGroups.id],
+  }).sync();
+  return c.json({ success: true, data: groups });
+});
+
 // 创建套餐分组
-shopRoutes.post('/package-groups', async (c) => {
+shopRoutes.post('/admin/package-groups', async (c) => {
   try {
     const body = await c.req.json();
     const now = new Date().toISOString();
@@ -120,7 +136,7 @@ shopRoutes.post('/package-groups', async (c) => {
 });
 
 // 更新套餐分组
-shopRoutes.put('/package-groups/:id', async (c) => {
+shopRoutes.put('/admin/package-groups/:id', async (c) => {
   try {
     const id = parseInt(c.req.param('id'));
     const body = await c.req.json();
@@ -142,7 +158,7 @@ shopRoutes.put('/package-groups/:id', async (c) => {
 });
 
 // 删除套餐分组
-shopRoutes.delete('/package-groups/:id', (c) => {
+shopRoutes.delete('/admin/package-groups/:id', (c) => {
   const id = parseInt(c.req.param('id'));
   const result = db.delete(packageGroups)
     .where(eq(packageGroups.id, id))

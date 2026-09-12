@@ -31,9 +31,17 @@ export function getNodes(): Node[] {
       node.serverId = 1;
       migrated = true;
     }
+    if (node.userId === undefined || node.userId === null) {
+      node.userId = 1;
+      migrated = true;
+    }
   }
   if (migrated) saveNodes(nodes);
   return nodes;
+}
+
+export function countNodesByUser(userId: number): number {
+  return getNodes().filter(n => (n.userId ?? 1) === userId).length;
 }
 
 export function saveNodes(nodes: Node[]): void {

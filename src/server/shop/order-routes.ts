@@ -45,6 +45,7 @@ async function applyPackageToUser(userId: number, pkg: any, orderId: number) {
   // 计算应用值
   const appliedFlow = pkg.trafficLimitGb > 0 ? pkg.trafficLimitGb : (user.totalFlowGb || 0);
   const appliedMaxRules = pkg.maxRules > 0 ? pkg.maxRules : (user.maxRules || 0);
+  const appliedMaxNodes = pkg.maxNodes > 0 ? pkg.maxNodes : (user.maxNodes ?? 0);
   const appliedExpireAt = calculateExpireAt(pkg.validityDays);
   const appliedSpeedLimit = Math.max(user.speedLimitMbps || 0, pkg.speedLimitMbps || 0);
   const appliedMaxConnections = Math.max(user.maxConnections || 0, pkg.maxConnections || 0);
@@ -78,7 +79,7 @@ async function applyPackageToUser(userId: number, pkg: any, orderId: number) {
   }).run();
   
   // 更新用户字段
-  db.run(sql`UPDATE users SET total_flow_gb = ${appliedFlow}, max_rules = ${appliedMaxRules}, expired_at = ${appliedExpireAt}, speed_limit_mbps = ${appliedSpeedLimit}, max_connections = ${appliedMaxConnections}, max_ip_access = ${appliedMaxIpAccess} WHERE id = ${userId}`);
+  db.run(sql`UPDATE users SET total_flow_gb = ${appliedFlow}, max_rules = ${appliedMaxRules}, max_nodes = ${appliedMaxNodes}, expired_at = ${appliedExpireAt}, speed_limit_mbps = ${appliedSpeedLimit}, max_connections = ${appliedMaxConnections}, max_ip_access = ${appliedMaxIpAccess} WHERE id = ${userId}`);
 }
 
 // 创建订单

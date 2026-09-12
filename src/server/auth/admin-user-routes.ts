@@ -3,6 +3,9 @@ import { db } from '../db/index.js';
 import { users } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
 import type { ApiResponse } from '../../shared/types.js';
+import { createUser, getUser } from './user-store.js';
+import { hashPassword } from './password.js';
+import { countNodesByUser } from '../node/node-store.js';
 
 export const adminUserRoutes = new Hono();
 
@@ -22,9 +25,61 @@ adminUserRoutes.get('/users', (c) => {
       trafficLimitGb: u.trafficLimitGb,
       expiredAt: u.expiredAt,
       maxNodes: u.maxNodes,
+      nodeCount: countNodesByUser(u.id),
       createdAt: u.createdAt,
     }))
   });
+});
+
+// 创建用户（管理员）
+adminUserRoutes.post('/users', async (c) => {
+  try {
+    const body = await c.req.json<{
+      username: string;
+      password: string;
+      role?: string;
+      maxNodes?: number;
+      trafficLimitGb?: number;
+      expiredAt?: number;
+    }>();
+
+    if (!body.username || !body.password) {
+      return c.json<ApiResponse>({ success: false, error: '用户名和密码不能为空' }, 400);
+    }
+    if (body.username.length < 3) {
+      return c.json<ApiResponse>({ success: false, error: '用户名至少 3 个字符' }, 400);
+    }
+    if (body.password.length < 6) {
+      return c.json<ApiResponse>({ success: false, error: '密码至少 6 个字符' }, 400);
+    }
+
+    const existing = await getUser(body.username);
+    if (existing) {
+      return c.json<ApiResponse>({ success: false, error: '用户名已存在' }, 409);
+    }
+
+    const passwordHash = await hashPassword(body.password);
+    const user = await createUser(body.username, passwordHash, body.role || 'user');
+    if (!user) {
+      return c.json<ApiResponse>({ success: false, error: '创建用户失败' }, 500);
+    }
+
+    const updateData: any = {};
+    if (body.maxNodes !== undefined) updateData.maxNodes = body.maxNodes;
+    if (body.trafficLimitGb !== undefined) updateData.trafficLimitGb = body.trafficLimitGb;
+    if (body.expiredAt !== undefined) updateData.expiredAt = body.expiredAt;
+    if (Object.keys(updateData).length > 0) {
+      db.update(users)
+        .set({ ...updateData, updatedAt: new Date().toISOString() })
+        .where(eq(users.id, user.id))
+        .run();
+    }
+
+    return c.json<ApiResponse>({ success: true, data: { id: user.id, username: user.username } }, 201);
+  } catch (error: any) {
+    console.error('Create user error:', error);
+    return c.json<ApiResponse>({ success: false, error: '创建用户失败' }, 500);
+  }
 });
 
 // 更新用户（管理员）

@@ -50,7 +50,7 @@ export default function AdminPackageGroups() {
 
   const handleDelete = async (id: number) => {
     try {
-      const res = await api.delete(`/shop/package-groups/${id}`);
+      const res = await api.delete(`/shop/admin/package-groups/${id}`);
       if (res.data.success) {
         message.success('删除成功');
         loadData();
@@ -67,7 +67,7 @@ export default function AdminPackageGroups() {
       const values = await form.validateFields();
       setSubmitting(true);
 
-      const url = editId ? `/shop/package-groups/${editId}` : '/shop/package-groups';
+      const url = editId ? `/shop/admin/package-groups/${editId}` : '/shop/admin/package-groups';
       const method = editId ? 'put' : 'post';
 
       const res = await api[method](url, values);

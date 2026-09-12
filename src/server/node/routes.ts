@@ -4,11 +4,12 @@
 
 import { Hono } from 'hono';
 import type { Node, CreateNodeRequest, ApiResponse, ListResponse } from '../../shared/types.js';
-import { getNodes, getNodeById, createNode, updateNode, deleteNode, setNodeEnabled } from './node-store.js';
+import { getNodes, getNodeById, createNode, updateNode, deleteNode, setNodeEnabled, countNodesByUser } from './node-store.js';
 import { generateShareLink } from './link-generator.js';
 import { testNodeLatency } from './latency-tester.js';
 import { xrayService } from '../xray/service.js';
 import { getRoutes } from '../route/route-store.js';
+import { getUserById } from '../auth/user-store.js';
 import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
@@ -139,10 +140,21 @@ function reloadXray() {
   }, 0);
 }
 
-// 获取所有节点（可按服务器过滤）
+// 当前用户是否有权操作该节点
+function canAccessNode(c: any, node: Node): boolean {
+  if (c.get('role') === 'admin') return true;
+  return (node.userId ?? 1) === c.get('userId');
+}
+
+// 获取节点列表（管理员看全部，普通用户看自己的；可按服务器过滤）
 nodeRoutes.get('/', (c) => {
   const serverIdParam = c.req.query('serverId');
+  const isAdmin = (c as any).get('role') === 'admin';
+  const userId = (c as any).get('userId');
   let nodes = getNodes();
+  if (!isAdmin) {
+    nodes = nodes.filter(n => (n.userId ?? 1) === userId);
+  }
   if (serverIdParam) {
     const serverId = parseInt(serverIdParam);
     nodes = nodes.filter(n => (n.serverId ?? 1) === serverId);
@@ -194,7 +206,18 @@ nodeRoutes.post('/', async (c) => {
       return c.json<ApiResponse>({ success: false, error: 'Reality 密钥生成失败，请确认 Xray 已安装' }, 400);
     }
 
-    const node = createNode({ ...body, serverId: body.serverId ?? 1 });
+    const role = (c as any).get('role');
+    const userId = (c as any).get('userId');
+
+    if (role !== 'admin') {
+      const user = await getUserById(userId);
+      const limit = user?.maxNodes ?? 0;
+      if (limit > 0 && countNodesByUser(userId) >= limit) {
+        return c.json<ApiResponse>({ success: false, error: `节点数量已达上限（${limit}）` }, 400);
+      }
+    }
+
+    const node = createNode({ ...body, serverId: body.serverId ?? 1, userId });
     reloadXray();
     
     return c.json<ApiResponse<any>>({ 
@@ -211,6 +234,13 @@ nodeRoutes.post('/', async (c) => {
 nodeRoutes.put('/:id', async (c) => {
   try {
     const id = c.req.param('id');
+    const existing = getNodeById(id);
+    if (!existing) {
+      return c.json<ApiResponse>({ success: false, error: '节点不存在' }, 404);
+    }
+    if (!canAccessNode(c, existing)) {
+      return c.json<ApiResponse>({ success: false, error: '无权操作该节点' }, 403);
+    }
     const body = await c.req.json<Partial<CreateNodeRequest>>();
     
     // 自动填充 Reality 配置
@@ -243,12 +273,15 @@ nodeRoutes.put('/:id', async (c) => {
 // 删除节点（自动重载 Xray）
 nodeRoutes.delete('/:id', (c) => {
   const id = c.req.param('id');
-  const success = deleteNode(id);
-  
-  if (!success) {
+  const existing = getNodeById(id);
+  if (!existing) {
     return c.json<ApiResponse>({ success: false, error: '节点不存在' }, 404);
   }
-  
+  if (!canAccessNode(c, existing)) {
+    return c.json<ApiResponse>({ success: false, error: '无权操作该节点' }, 403);
+  }
+
+  deleteNode(id);
   reloadXray();
   return c.json<ApiResponse>({ success: true });
 });
@@ -257,6 +290,13 @@ nodeRoutes.delete('/:id', (c) => {
 nodeRoutes.patch('/:id/toggle', async (c) => {
   try {
     const id = c.req.param('id');
+    const existing = getNodeById(id);
+    if (!existing) {
+      return c.json<ApiResponse>({ success: false, error: '节点不存在' }, 404);
+    }
+    if (!canAccessNode(c, existing)) {
+      return c.json<ApiResponse>({ success: false, error: '无权操作该节点' }, 403);
+    }
     const { enabled } = await c.req.json<{ enabled: boolean }>();
     
     const node = setNodeEnabled(id, enabled);
@@ -280,6 +320,9 @@ nodeRoutes.post('/:id/test-latency', async (c) => {
     
     if (!node) {
       return c.json<ApiResponse>({ success: false, error: '节点不存在' }, 404);
+    }
+    if (!canAccessNode(c, node)) {
+      return c.json<ApiResponse>({ success: false, error: '无权操作该节点' }, 403);
     }
     
     const result = await testNodeLatency(node);

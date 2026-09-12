@@ -37,6 +37,7 @@ export const subscriptionPackages = sqliteTable('subscription_packages', {
   price: integer('price').default(0),  // 价格（分）
   validityDays: integer('validity_days').default(0),  // 有效期天数，0=永久
   trafficLimitGb: real('traffic_limit_gb').default(0),  // 流量配额 GB
+  maxNodes: integer('max_nodes').default(0),  // 最大节点数，0=不改变
   maxRules: integer('max_rules').default(0),  // 最大规则数
   speedLimitMbps: integer('speed_limit_mbps').default(0),  // 限速 Mbps
   maxConnections: integer('max_connections').default(0),  // 最大连接数

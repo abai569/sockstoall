@@ -38,15 +38,18 @@ function buildMenuItems(isAdmin: boolean) {
         { key: '/logs', icon: <FileTextOutlined />, label: '实时日志' },
       ],
     },
-    {
+  ];
+
+  if (!isAdmin) {
+    items.push({
       type: 'group',
       label: '用户',
       children: [
         { key: '/shop', icon: <ShoppingCartOutlined />, label: '商城' },
         { key: '/orders', icon: <OrderedListOutlined />, label: '我的订单' },
       ],
-    },
-  ];
+    });
+  }
 
   if (isAdmin) {
     items.push({

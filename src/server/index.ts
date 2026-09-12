@@ -55,6 +55,7 @@ app.use('/api/xray/*', authMiddleware);
 app.use('/api/shop/orders/*', authMiddleware);
 app.use('/api/shop/balance/*', authMiddleware);
 app.use('/api/shop/admin/*', authMiddleware);
+app.use('/api/shop/admin/*', adminMiddleware);
 app.use('/api/server/*', authMiddleware);
 
 app.route('/api/link', linkRoutes);

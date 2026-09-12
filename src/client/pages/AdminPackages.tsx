@@ -63,7 +63,7 @@ export default function AdminPackages() {
 
   const handleDelete = async (id: number) => {
     try {
-      const res = await api.delete(`/shop/packages/${id}`);
+      const res = await api.delete(`/shop/admin/packages/${id}`);
       if (res.data.success) {
         message.success('删除成功');
         loadData();
@@ -80,7 +80,7 @@ export default function AdminPackages() {
       const values = await form.validateFields();
       setSubmitting(true);
       
-      const url = editId ? `/shop/packages/${editId}` : '/shop/packages';
+      const url = editId ? `/shop/admin/packages/${editId}` : '/shop/admin/packages';
       const method = editId ? 'put' : 'post';
       
       const res = await api[method](url, values);
@@ -216,6 +216,10 @@ export default function AdminPackages() {
             <InputNumber min={0} style={{ width: '100%' }} />
           </Form.Item>
           
+          <Form.Item name="maxNodes" label="最大节点数" extra="0 表示不改变用户当前设置">
+            <InputNumber min={0} style={{ width: '100%' }} />
+          </Form.Item>
+
           <Form.Item name="maxRules" label="最大规则数" extra="0 表示无限">
             <InputNumber min={0} style={{ width: '100%' }} />
           </Form.Item>

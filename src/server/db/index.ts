@@ -70,6 +70,7 @@ export function initDatabase() {
       price INTEGER DEFAULT 0,
       validity_days INTEGER DEFAULT 0,
       traffic_limit_gb REAL DEFAULT 0,
+      max_nodes INTEGER DEFAULT 0,
       max_rules INTEGER DEFAULT 0,
       speed_limit_mbps INTEGER DEFAULT 0,
       max_connections INTEGER DEFAULT 0,
@@ -213,6 +214,7 @@ export function initDatabase() {
   addColumnIfMissing('users', 'traffic_limit_gb', 'REAL DEFAULT 0');
   addColumnIfMissing('users', 'max_nodes', 'INTEGER DEFAULT 5');
   addColumnIfMissing('servers', 'is_local', 'INTEGER NOT NULL DEFAULT 0');
+  addColumnIfMissing('subscription_packages', 'max_nodes', 'INTEGER DEFAULT 0');
 
   seedUsers();
   seedLocalServer();
@@ -244,18 +246,23 @@ function seedLocalServer(): void {
 
 function seedUsers(): void {
   const row = sqlite.prepare('SELECT COUNT(*) AS count FROM users').get() as { count: number };
+
+  // 管理员默认不限制节点数（-1 表示无限制）
+  sqlite.prepare("UPDATE users SET max_nodes = -1 WHERE role = 'admin' AND max_nodes = 5").run();
+
   if (row.count > 0) return;
 
   const now = new Date().toISOString();
   const insert = sqlite.prepare(
-    'INSERT INTO users (username, password_hash, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?)'
+    'INSERT INTO users (username, password_hash, role, max_nodes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)'
   );
 
   if (existsSync(USERS_FILE)) {
     try {
       const legacy = JSON.parse(readFileSync(USERS_FILE, 'utf-8')) as Array<{ username: string; passwordHash: string; createdAt?: string }>;
       for (const item of legacy) {
-        insert.run(item.username, item.passwordHash, item.username === 'admin' ? 'admin' : 'user', item.createdAt || now, now);
+        const isAdmin = item.username === 'admin';
+        insert.run(item.username, item.passwordHash, isAdmin ? 'admin' : 'user', isAdmin ? -1 : 5, item.createdAt || now, now);
       }
       console.log(`Migrated ${legacy.length} user(s) from users.json`);
       return;
@@ -265,7 +272,7 @@ function seedUsers(): void {
   }
 
   const defaultHash = bcrypt.hashSync('admin123', 10);
-  insert.run('admin', defaultHash, 'admin', now, now);
+  insert.run('admin', defaultHash, 'admin', -1, now, now);
   console.log('Created default user admin/admin123');
 }
 

@@ -23,10 +23,7 @@ paymentRoutes.get('/configs', (c) => {
 });
 
 // 保存支付配置（管理员）
-paymentRoutes.post('/configs', async (c) => {
-  if ((c as any).get('role') !== 'admin') {
-    return c.json({ success: false, error: '需要管理员权限' }, 403);
-  }
+paymentRoutes.post('/admin/configs', async (c) => {
   try {
     const body = await c.req.json<{ channel: string; config: string; enabled: number }>();
     const now = new Date().toISOString();
@@ -70,7 +67,7 @@ paymentRoutes.get('/admin/configs', (c) => {
 });
 
 // 删除支付配置（管理员）
-paymentRoutes.delete('/configs/:id', (c) => {
+paymentRoutes.delete('/admin/configs/:id', (c) => {
   const id = parseInt(c.req.param('id'));
   const result = db.delete(paymentConfigs)
     .where(eq(paymentConfigs.id, id))
@@ -247,6 +244,7 @@ async function applyPackageToUser(userId: number, pkg: any, orderId: number) {
 
   const appliedFlow = pkg.trafficLimitGb > 0 ? pkg.trafficLimitGb : (user.totalFlowGb || 0);
   const appliedMaxRules = pkg.maxRules > 0 ? pkg.maxRules : (user.maxRules || 0);
+  const appliedMaxNodes = pkg.maxNodes > 0 ? pkg.maxNodes : (user.maxNodes ?? 0);
   const appliedExpireAt = pkg.validityDays === 0 ? new Date('2056-01-01').getTime() : Date.now() + pkg.validityDays * 24 * 60 * 60 * 1000;
   const appliedSpeedLimit = Math.max(user.speedLimitMbps || 0, pkg.speedLimitMbps || 0);
   const appliedMaxConnections = Math.max(user.maxConnections || 0, pkg.maxConnections || 0);
@@ -263,5 +261,5 @@ async function applyPackageToUser(userId: number, pkg: any, orderId: number) {
     createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
   }).run();
 
-  db.run(sql`UPDATE users SET total_flow_gb = ${appliedFlow}, max_rules = ${appliedMaxRules}, expired_at = ${appliedExpireAt}, speed_limit_mbps = ${appliedSpeedLimit}, max_connections = ${appliedMaxConnections}, max_ip_access = ${appliedMaxIpAccess} WHERE id = ${userId}`);
+  db.run(sql`UPDATE users SET total_flow_gb = ${appliedFlow}, max_rules = ${appliedMaxRules}, max_nodes = ${appliedMaxNodes}, expired_at = ${appliedExpireAt}, speed_limit_mbps = ${appliedSpeedLimit}, max_connections = ${appliedMaxConnections}, max_ip_access = ${appliedMaxIpAccess} WHERE id = ${userId}`);
 }

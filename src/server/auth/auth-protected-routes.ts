@@ -3,6 +3,7 @@ import type { ApiResponse, ChangePasswordRequest, ChangeAccountRequest } from '.
 import { getUser, updateUserPassword, renameUser } from './user-store.js';
 import { comparePassword, hashPassword } from './password.js';
 import { getSiteConfig, updateSiteConfig } from './site-config.js';
+import { countNodesByUser } from '../node/node-store.js';
 
 export const authProtectedRoutes = new Hono();
 
@@ -101,9 +102,9 @@ authProtectedRoutes.get('/me', async (c) => {
     return c.json<ApiResponse>({ success: false, error: '用户不存在' }, 404);
   }
   
-  return c.json<ApiResponse<{ username: string; role: string }>>({
+  return c.json<ApiResponse<{ username: string; role: string; maxNodes: number; nodeCount: number }>>({
     success: true,
-    data: { username: user.username, role: user.role }
+    data: { username: user.username, role: user.role, maxNodes: user.maxNodes ?? 0, nodeCount: countNodesByUser(user.id) }
   });
 });
 
