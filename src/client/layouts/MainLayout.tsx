@@ -17,6 +17,7 @@ import {
   TagsOutlined,
   TeamOutlined,
   CloudServerOutlined,
+  PayCircleOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -36,6 +37,7 @@ const menuItems = [
   { key: '/logs', icon: <FileTextOutlined />, label: '实时日志' },
   { key: '/admin/users', icon: <TeamOutlined />, label: '用户管理' },
   { key: '/admin/servers', icon: <CloudServerOutlined />, label: '服务器管理' },
+  { key: '/admin/payment', icon: <PayCircleOutlined />, label: '支付配置' },
   { key: '/admin/packages', icon: <ShopOutlined />, label: '套餐管理' },
   { key: '/admin/package-groups', icon: <TagsOutlined />, label: '套餐分组' },
   { key: '/admin/orders', icon: <OrderedListOutlined />, label: '订单管理' },
@@ -134,6 +136,7 @@ export default function MainLayout() {
     if (path.startsWith('/orders')) return '/orders';
     if (path.startsWith('/admin/users')) return '/admin/users';
     if (path.startsWith('/admin/servers')) return '/admin/servers';
+    if (path.startsWith('/admin/payment')) return '/admin/payment';
     if (path.startsWith('/admin/packages')) return '/admin/packages';
     if (path.startsWith('/admin/package-groups')) return '/admin/package-groups';
     if (path.startsWith('/admin/orders')) return '/admin/orders';

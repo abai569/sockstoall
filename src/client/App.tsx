@@ -15,6 +15,7 @@ import AdminOrders from './pages/AdminOrders';
 import AdminPackageGroups from './pages/AdminPackageGroups';
 import AdminUsers from './pages/AdminUsers';
 import AdminServers from './pages/AdminServers';
+import AdminPaymentConfigs from './pages/AdminPaymentConfigs';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
@@ -47,6 +48,7 @@ function App() {
             <Route path="admin/orders" element={<AdminOrders />} />
             <Route path="admin/users" element={<AdminUsers />} />
             <Route path="admin/servers" element={<AdminServers />} />
+            <Route path="admin/payment" element={<AdminPaymentConfigs />} />
             <Route path="settings" element={<Settings />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
