@@ -304,7 +304,7 @@ export class XrayService extends EventEmitter {
   private buildInbound(node: Node): any {
     const base = {
       port: node.port,
-      listen: node.listen || '0.0.0.0',
+      listen: '0.0.0.0',
       tag: node.name,
     };
 
