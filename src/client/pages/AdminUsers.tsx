@@ -14,8 +14,14 @@ export default function AdminUsers() {
   const [allServers, setAllServers] = useState<any[]>([]);
   const [assignedIds, setAssignedIds] = useState<number[]>([]);
   const [assignSaving, setAssignSaving] = useState(false);
+  const [packages, setPackages] = useState<any[]>([]);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+    api.get('/shop/admin/packages').then(res => {
+      setPackages((res.data.data || []).filter((p: any) => p.type === 'traffic'));
+    }).catch(() => {});
+  }, []);
 
   const loadData = async () => {
     setLoading(true);
@@ -32,7 +38,7 @@ export default function AdminUsers() {
   const openCreate = () => {
     setEditingUser(null);
     form.resetFields();
-    form.setFieldsValue({ status: 1, role: 'user', maxNodes: 0, trafficLimitGb: 0, flowResetTime: 0 });
+    form.setFieldsValue({ status: 1, role: 'user', maxNodes: 0, trafficLimitGb: 0, flowResetTime: 0, autoBuyTraffic: 0, autoBuyTrafficThreshold: 10 });
     setModalOpen(true);
   };
 
@@ -45,6 +51,9 @@ export default function AdminUsers() {
       maxNodes: user.maxNodes,
       trafficLimitGb: user.trafficLimitGb,
       flowResetTime: user.flowResetTime,
+      autoBuyTraffic: user.autoBuyTraffic,
+      autoBuyTrafficPackageId: user.autoBuyTrafficPackageId || undefined,
+      autoBuyTrafficThreshold: user.autoBuyTrafficThreshold,
       expiredAt: user.expiredAt ? dayjs(user.expiredAt) : null,
     });
     setModalOpen(true);
@@ -60,6 +69,9 @@ export default function AdminUsers() {
         status: values.status,
         trafficLimitGb: values.trafficLimitGb,
         flowResetTime: values.flowResetTime,
+        autoBuyTraffic: values.autoBuyTraffic,
+        autoBuyTrafficPackageId: values.autoBuyTrafficPackageId || 0,
+        autoBuyTrafficThreshold: values.autoBuyTrafficThreshold,
         expiredAt: values.expiredAt ? values.expiredAt.valueOf() : 0,
         maxNodes: values.maxNodes,
       };
@@ -212,6 +224,25 @@ export default function AdminUsers() {
             <Col xs={12} sm={12}>
               <Form.Item name="expiredAt" label="到期时间">
                 <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col xs={12} sm={12}>
+              <Form.Item name="autoBuyTraffic" label="自动购流">
+                <Select options={[{ value: 1, label: '启用' }, { value: 0, label: '禁用' }]} />
+              </Form.Item>
+            </Col>
+            <Col xs={12} sm={12}>
+              <Form.Item name="autoBuyTrafficPackageId" label="购流套餐">
+                <Select
+                  allowClear
+                  placeholder="选择流量套餐"
+                  options={packages.map(p => ({ value: p.id, label: `${p.name}（${(p.price / 100).toFixed(2)}元 / ${p.trafficLimitGb}GB）` }))}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={12} sm={12}>
+              <Form.Item name="autoBuyTrafficThreshold" label="购流阈值 (GB)" extra="剩余流量低于此值自动购买">
+                <InputNumber min={1} style={{ width: '100%' }} />
               </Form.Item>
             </Col>
           </Row>

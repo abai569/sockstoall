@@ -28,6 +28,9 @@ adminUserRoutes.get('/users', (c) => {
       usedFlowGb: u.usedFlowGb,
       flowResetTime: u.flowResetTime,
       trafficSuspended: u.trafficSuspended,
+      autoBuyTraffic: u.autoBuyTraffic,
+      autoBuyTrafficPackageId: u.autoBuyTrafficPackageId,
+      autoBuyTrafficThreshold: u.autoBuyTrafficThreshold,
       expiredAt: u.expiredAt,
       maxNodes: u.maxNodes,
       nodeCount: countNodesByUser(u.id),
@@ -48,6 +51,9 @@ adminUserRoutes.post('/users', async (c) => {
       maxNodes?: number;
       trafficLimitGb?: number;
       flowResetTime?: number;
+      autoBuyTraffic?: number;
+      autoBuyTrafficPackageId?: number;
+      autoBuyTrafficThreshold?: number;
       expiredAt?: number;
     }>();
 
@@ -77,6 +83,9 @@ adminUserRoutes.post('/users', async (c) => {
     if (body.maxNodes !== undefined) updateData.maxNodes = body.maxNodes;
     if (body.trafficLimitGb !== undefined) updateData.trafficLimitGb = body.trafficLimitGb;
     if (body.flowResetTime !== undefined) updateData.flowResetTime = body.flowResetTime;
+    if (body.autoBuyTraffic !== undefined) updateData.autoBuyTraffic = body.autoBuyTraffic;
+    if (body.autoBuyTrafficPackageId !== undefined) updateData.autoBuyTrafficPackageId = body.autoBuyTrafficPackageId;
+    if (body.autoBuyTrafficThreshold !== undefined) updateData.autoBuyTrafficThreshold = body.autoBuyTrafficThreshold;
     if (body.expiredAt !== undefined) updateData.expiredAt = body.expiredAt;
     if (Object.keys(updateData).length > 0) {
       db.update(users)
@@ -102,6 +111,9 @@ adminUserRoutes.put('/users/:id', async (c) => {
     status?: number;
     trafficLimitGb?: number;
     flowResetTime?: number;
+    autoBuyTraffic?: number;
+    autoBuyTrafficPackageId?: number;
+    autoBuyTrafficThreshold?: number;
     expiredAt?: number;
     maxNodes?: number;
   }>();
@@ -141,6 +153,9 @@ adminUserRoutes.put('/users/:id', async (c) => {
   if (body.status !== undefined) updateData.status = body.status;
   if (body.trafficLimitGb !== undefined) updateData.trafficLimitGb = body.trafficLimitGb;
   if (body.flowResetTime !== undefined) updateData.flowResetTime = body.flowResetTime;
+  if (body.autoBuyTraffic !== undefined) updateData.autoBuyTraffic = body.autoBuyTraffic;
+  if (body.autoBuyTrafficPackageId !== undefined) updateData.autoBuyTrafficPackageId = body.autoBuyTrafficPackageId;
+  if (body.autoBuyTrafficThreshold !== undefined) updateData.autoBuyTrafficThreshold = body.autoBuyTrafficThreshold;
   if (body.expiredAt !== undefined) updateData.expiredAt = body.expiredAt;
   if (body.maxNodes !== undefined) updateData.maxNodes = body.maxNodes;
 

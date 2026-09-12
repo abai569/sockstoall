@@ -2,6 +2,7 @@ import { db } from '../db/index.js';
 import { userSubscriptions, users, balanceLogs } from '../db/schema.js';
 import { eq, and, sql } from 'drizzle-orm';
 import { signBalanceLog } from './hmac.js';
+import { refreshUserQuota } from '../traffic/collector.js';
 
 // 自动续费检查（每分钟运行）
 export function runAutoRenewCheck() {
@@ -49,6 +50,9 @@ export function runAutoRenewCheck() {
           .run();
         
         db.run(sql`UPDATE users SET expired_at = ${newExpireAt} WHERE id = ${sub.userId}`);
+
+        // 续费后如因到期被暂停，尝试恢复
+        refreshUserQuota(sub.userId);
         
         // 记录余额日志
         db.insert(balanceLogs).values({
@@ -91,9 +95,14 @@ export function runAutoBuyTrafficCheck() {
       }).sync();
       
       if (!pkg || pkg.type !== 'traffic' || !pkg.autoBuyTrafficEnabled) continue;
-      
-      // 计算剩余流量
-      const remainingFlow = (user.totalFlowGb || 0) - (user.usedFlowGb || 0);
+      if (pkg.stock === 0) continue;
+
+      // 流量配额为 0 视为不限制，无需自动购流
+      const trafficLimit = user.trafficLimitGb || 0;
+      if (trafficLimit <= 0) continue;
+
+      // 计算剩余流量（真实用量：配额 - 已用）
+      const remainingFlow = trafficLimit - (user.usedFlowGb || 0);
       
       if (remainingFlow > (user.autoBuyTrafficThreshold || 10)) continue;
       
@@ -110,13 +119,16 @@ export function runAutoBuyTrafficCheck() {
         // 扣减余额
         db.run(sql`UPDATE users SET balance = ${balanceAfter} WHERE id = ${user.id}`);
         
-        // 添加流量
-        db.run(sql`UPDATE users SET traffic_flow = traffic_flow + ${pkg.trafficLimitGb}, total_flow_gb = total_flow_gb + ${pkg.trafficLimitGb} WHERE id = ${user.id}`);
+        // 添加流量配额
+        db.run(sql`UPDATE users SET traffic_flow = traffic_flow + ${pkg.trafficLimitGb}, total_flow_gb = total_flow_gb + ${pkg.trafficLimitGb}, traffic_limit_gb = traffic_limit_gb + ${pkg.trafficLimitGb} WHERE id = ${user.id}`);
         
         // 扣减库存
         if (pkg.stock > 0) {
           db.run(sql`UPDATE subscription_packages SET stock = stock - 1 WHERE id = ${pkg.id} AND stock > 0`);
         }
+
+        // 购流后如因超额被暂停，尝试恢复
+        refreshUserQuota(user.id);
         
         // 记录余额日志
         db.insert(balanceLogs).values({

@@ -97,6 +97,13 @@ export function enforceUserQuota(userId: number): boolean {
   return false;
 }
 
+/**
+ * 重新校验并应用某用户的配额（续费/购流后调用），必要时恢复节点
+ */
+export function refreshUserQuota(userId: number): void {
+  if (enforceUserQuota(userId)) reloadLocalXray();
+}
+
 function parseStats(raw: string): Array<{ name: string; value: number }> {
   const start = raw.indexOf('{');
   const end = raw.lastIndexOf('}');
