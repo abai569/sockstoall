@@ -5,7 +5,7 @@ import {
   ThunderboltOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { nodeApi, routeApi, xrayApi } from '../api/client';
+import { nodeApi, routeApi, xrayApi, authApi } from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 
 const { Title } = Typography;
@@ -19,6 +19,7 @@ export default function Dashboard() {
   const [actionLoading, setActionLoading] = useState(false);
   const [updateLoading, setUpdateLoading] = useState(false);
   const [xrayUpdate, setXrayUpdate] = useState<any>(null);
+  const [me, setMe] = useState<any>(null);
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
 
@@ -32,12 +33,12 @@ export default function Dashboard() {
       const routes = routesRes.data.data?.items || [];
       setRouteCount(routes.length);
       setEnabledRoutes(routes.filter((r: any) => r.enabled).length);
+      const xrayRes = await xrayApi.status();
+      setXrayStatus(xrayRes.data.data);
+      const meRes = await authApi.getMe();
+      setMe(meRes.data.data);
       if (isAdmin) {
-        const [xrayRes, updateRes] = await Promise.all([
-          xrayApi.status(),
-          xrayApi.checkUpdate(),
-        ]);
-        setXrayStatus(xrayRes.data.data);
+        const updateRes = await xrayApi.checkUpdate();
         setXrayUpdate(updateRes.data.data);
       }
     } catch (error) {
@@ -97,18 +98,17 @@ export default function Dashboard() {
     <div>
       <Title level={4} style={{ marginBottom: 24 }}>系统总览</Title>
       
-      {isAdmin && (
-        <Card
-          title="Xray 服务"
-          style={{ marginBottom: 24 }}
-          extra={
-            xrayStatus?.installed ? (
-              <Tag color="success" icon={<CheckCircleOutlined />}>已安装 {xrayStatus.version}</Tag>
-            ) : (
-              <Tag color="error">未安装</Tag>
-            )
-          }
-        >
+      <Card
+        title="Xray 服务"
+        style={{ marginBottom: 24 }}
+        extra={
+          xrayStatus?.installed ? (
+            <Tag color="success" icon={<CheckCircleOutlined />}>已安装 {xrayStatus.version}</Tag>
+          ) : (
+            <Tag color="error">未安装</Tag>
+          )
+        }
+      >
           {xrayStatus && !xrayStatus.installed && (
             <Alert
               message="Xray 未安装"
@@ -131,46 +131,72 @@ export default function Dashboard() {
             <Col span={6}>
               <Statistic title="PID" value={xrayStatus?.pid || '-'} />
             </Col>
-            <Col span={6}>
-              <Space>
-                {xrayStatus?.running ? (
-                  <Button danger onClick={() => handleXrayAction('stop')} loading={actionLoading}>停止服务</Button>
-                ) : (
-                  <Button type="primary" onClick={() => handleXrayAction('start')} loading={actionLoading} disabled={!xrayStatus?.installed}>启动服务</Button>
-                )}
-                {xrayUpdate?.updateAvailable && (
-                  <Button type="primary" onClick={handleXrayUpdate} loading={updateLoading}>
-                    升级至 v{xrayUpdate.latestVersion}
-                  </Button>
-                )}
-              </Space>
-            </Col>
+            {isAdmin && (
+              <Col span={6}>
+                <Space>
+                  {xrayStatus?.running ? (
+                    <Button danger onClick={() => handleXrayAction('stop')} loading={actionLoading}>停止服务</Button>
+                  ) : (
+                    <Button type="primary" onClick={() => handleXrayAction('start')} loading={actionLoading} disabled={!xrayStatus?.installed}>启动服务</Button>
+                  )}
+                  {xrayUpdate?.updateAvailable && (
+                    <Button type="primary" onClick={handleXrayUpdate} loading={updateLoading}>
+                      升级至 v{xrayUpdate.latestVersion}
+                    </Button>
+                  )}
+                </Space>
+              </Col>
+            )}
           </Row>
         </Card>
-      )}
       
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card hoverable onClick={() => navigate('/nodes')}>
-            <Statistic title="入站代理" value={nodeCount} prefix={<NodeIndexOutlined />} valueStyle={{ color: '#1890ff' }} />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card hoverable onClick={() => navigate('/routes')}>
-            <Statistic title="出站代理" value={routeCount} prefix={<SwapOutlined />} valueStyle={{ color: '#722ed1' }} />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic title="已启用出站" value={enabledRoutes} prefix={<CheckCircleOutlined />} valueStyle={{ color: '#52c41a' }} />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
-            <Statistic title="入站端口" value={nodeCount > 0 ? `${nodeCount} 个` : '无'} prefix={<ThunderboltOutlined />} />
-          </Card>
-        </Col>
-      </Row>
+      {isAdmin ? (
+        <Row gutter={[16, 16]}>
+          <Col xs={24} sm={12} lg={6}>
+            <Card hoverable onClick={() => navigate('/nodes')}>
+              <Statistic title="入站代理" value={nodeCount} prefix={<NodeIndexOutlined />} valueStyle={{ color: '#1890ff' }} />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card hoverable onClick={() => navigate('/routes')}>
+              <Statistic title="出站代理" value={routeCount} prefix={<SwapOutlined />} valueStyle={{ color: '#722ed1' }} />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card>
+              <Statistic title="已启用出站" value={enabledRoutes} prefix={<CheckCircleOutlined />} valueStyle={{ color: '#52c41a' }} />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card>
+              <Statistic title="入站端口" value={nodeCount > 0 ? `${nodeCount} 个` : '无'} prefix={<ThunderboltOutlined />} />
+            </Card>
+          </Col>
+        </Row>
+      ) : (
+        <Row gutter={[16, 16]}>
+          <Col xs={24} sm={12} lg={6}>
+            <Card>
+              <Statistic title="入站规则" value={`${me?.nodeCount ?? 0} / ${Number(me?.maxNodes) > 0 ? me.maxNodes : '不限'}`} prefix={<NodeIndexOutlined />} valueStyle={{ color: '#1890ff' }} />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card>
+              <Statistic title="出站规则" value={`${me?.routeCount ?? 0} / ${Number(me?.maxNodes) > 0 ? me.maxNodes : '不限'}`} prefix={<SwapOutlined />} valueStyle={{ color: '#722ed1' }} />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card>
+              <Statistic title="流量 (GB)" value={`${(me?.usedFlowGb ?? 0).toFixed(2)} / ${Number(me?.trafficLimitGb) > 0 ? me.trafficLimitGb : '不限'}`} prefix={<ThunderboltOutlined />} valueStyle={{ color: '#fa8c16' }} />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card>
+              <Statistic title="到期时间" value={me?.expiredAt ? new Date(me.expiredAt).toLocaleDateString() : '永久'} prefix={<CheckCircleOutlined />} />
+            </Card>
+          </Col>
+        </Row>
+      )}
       
       <Card title="快捷操作" style={{ marginTop: 24 }}>
         <Space wrap>

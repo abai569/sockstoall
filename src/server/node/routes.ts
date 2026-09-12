@@ -194,6 +194,9 @@ nodeRoutes.post('/', async (c) => {
         return c.json<ApiResponse>({ success: false, error: '你没有该服务器的使用权限' }, 403);
       }
       const user = await getUserById(userId);
+      if (user?.trafficSuspended === 1) {
+        return c.json<ApiResponse>({ success: false, error: '流量超额或已到期，暂时无法创建' }, 403);
+      }
       const limit = user?.maxNodes ?? 0;
       if (limit > 0 && countNodesByUser(userId) >= limit) {
         return c.json<ApiResponse>({ success: false, error: `节点数量已达上限（${limit}）` }, 400);

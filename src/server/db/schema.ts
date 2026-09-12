@@ -24,6 +24,9 @@ export const users = sqliteTable('users', {
   autoBuyTrafficThreshold: real('auto_buy_traffic_threshold').default(10),
   renewalAmount: integer('renewal_amount').default(0),
   baseFlow: real('base_flow').default(0),
+  flowResetTime: integer('flow_reset_time').default(0), // 月度归零日，0=不归零
+  flowLastResetAt: integer('flow_last_reset_at').default(0),
+  trafficSuspended: integer('traffic_suspended').default(0), // 1=因超额/到期被暂停
   createdAt: text('created_at'),
   updatedAt: text('updated_at'),
 });

@@ -25,6 +25,9 @@ adminUserRoutes.get('/users', (c) => {
       role: u.role,
       status: u.status,
       trafficLimitGb: u.trafficLimitGb,
+      usedFlowGb: u.usedFlowGb,
+      flowResetTime: u.flowResetTime,
+      trafficSuspended: u.trafficSuspended,
       expiredAt: u.expiredAt,
       maxNodes: u.maxNodes,
       nodeCount: countNodesByUser(u.id),
@@ -44,6 +47,7 @@ adminUserRoutes.post('/users', async (c) => {
       status?: number;
       maxNodes?: number;
       trafficLimitGb?: number;
+      flowResetTime?: number;
       expiredAt?: number;
     }>();
 
@@ -72,6 +76,7 @@ adminUserRoutes.post('/users', async (c) => {
     if (body.status !== undefined) updateData.status = body.status;
     if (body.maxNodes !== undefined) updateData.maxNodes = body.maxNodes;
     if (body.trafficLimitGb !== undefined) updateData.trafficLimitGb = body.trafficLimitGb;
+    if (body.flowResetTime !== undefined) updateData.flowResetTime = body.flowResetTime;
     if (body.expiredAt !== undefined) updateData.expiredAt = body.expiredAt;
     if (Object.keys(updateData).length > 0) {
       db.update(users)
@@ -96,6 +101,7 @@ adminUserRoutes.put('/users/:id', async (c) => {
     role?: string;
     status?: number;
     trafficLimitGb?: number;
+    flowResetTime?: number;
     expiredAt?: number;
     maxNodes?: number;
   }>();
@@ -134,6 +140,7 @@ adminUserRoutes.put('/users/:id', async (c) => {
   if (body.role !== undefined) updateData.role = body.role;
   if (body.status !== undefined) updateData.status = body.status;
   if (body.trafficLimitGb !== undefined) updateData.trafficLimitGb = body.trafficLimitGb;
+  if (body.flowResetTime !== undefined) updateData.flowResetTime = body.flowResetTime;
   if (body.expiredAt !== undefined) updateData.expiredAt = body.expiredAt;
   if (body.maxNodes !== undefined) updateData.maxNodes = body.maxNodes;
 

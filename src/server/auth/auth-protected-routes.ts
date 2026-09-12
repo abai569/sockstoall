@@ -4,6 +4,7 @@ import { getUser, updateUserPassword, renameUser } from './user-store.js';
 import { comparePassword, hashPassword } from './password.js';
 import { getSiteConfig, updateSiteConfig } from './site-config.js';
 import { countNodesByUser } from '../node/node-store.js';
+import { countRoutesByUser } from '../route/route-store.js';
 
 export const authProtectedRoutes = new Hono();
 
@@ -102,9 +103,19 @@ authProtectedRoutes.get('/me', async (c) => {
     return c.json<ApiResponse>({ success: false, error: '用户不存在' }, 404);
   }
   
-  return c.json<ApiResponse<{ username: string; role: string; maxNodes: number; nodeCount: number }>>({
+  return c.json<ApiResponse<any>>({
     success: true,
-    data: { username: user.username, role: user.role, maxNodes: user.maxNodes ?? 0, nodeCount: countNodesByUser(user.id) }
+    data: {
+      username: user.username,
+      role: user.role,
+      maxNodes: user.maxNodes ?? 0,
+      nodeCount: countNodesByUser(user.id),
+      routeCount: countRoutesByUser(user.id),
+      trafficLimitGb: user.trafficLimitGb ?? 0,
+      usedFlowGb: user.usedFlowGb ?? 0,
+      expiredAt: user.expiredAt ?? 0,
+      trafficSuspended: user.trafficSuspended ?? 0,
+    }
   });
 });
 

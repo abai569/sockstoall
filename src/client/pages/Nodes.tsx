@@ -193,6 +193,13 @@ export default function Nodes() {
     { title: '协议', dataIndex: 'protocol', key: 'protocol', render: (p: string) => <Tag color={protocolColors[p]}>{protocolNames[p] || p}</Tag> },
     { title: '入站地址', dataIndex: 'listen', key: 'listen', render: (l: string) => l || '0.0.0.0' },
     { title: '端口', dataIndex: 'port', key: 'port' },
+    {
+      title: '流量', key: 'traffic', width: 100,
+      render: (_: any, record: NodeWithLink) => {
+        const gb = ((record.uplinkBytes || 0) + (record.downlinkBytes || 0)) / (1024 ** 3);
+        return gb > 0 ? `${gb.toFixed(2)} GB` : '-';
+      },
+    },
     { title: '备注', dataIndex: 'remark', key: 'remark', ellipsis: true, render: (remark: string) => remark || '-' },
     {
       title: '状态', dataIndex: 'enabled', key: 'enabled',

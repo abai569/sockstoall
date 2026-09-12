@@ -39,6 +39,9 @@ interface BaseNode {
   serverId?: number; // 所属服务器，默认 1（本机）
   userId?: number; // 所有者用户，默认 1（管理员）
   shareHost?: string; // 分享地址（域名/IP），留空自动
+  uplinkBytes?: number; // 上行流量（字节）
+  downlinkBytes?: number; // 下行流量（字节）
+  suspended?: boolean; // 是否因超额/到期被停用
   remark?: string;
   createdAt: string;
   updatedAt: string;
@@ -166,6 +169,10 @@ export interface User {
   status?: number;
   maxNodes?: number;
   trafficLimitGb?: number;
+  usedFlowGb?: number;
+  flowResetTime?: number;
+  flowLastResetAt?: number;
+  trafficSuspended?: number;
   expiredAt?: number;
   createdAt: string;
 }

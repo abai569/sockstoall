@@ -16,6 +16,10 @@ function toUser(row: any): User {
     status: row.status ?? 1,
     maxNodes: row.maxNodes ?? 0,
     trafficLimitGb: row.trafficLimitGb ?? 0,
+    usedFlowGb: row.usedFlowGb ?? 0,
+    flowResetTime: row.flowResetTime ?? 0,
+    flowLastResetAt: row.flowLastResetAt ?? 0,
+    trafficSuspended: row.trafficSuspended ?? 0,
     expiredAt: row.expiredAt ?? 0,
     createdAt: row.createdAt || '',
   };

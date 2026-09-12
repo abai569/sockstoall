@@ -44,6 +44,60 @@ export function countNodesByUser(userId: number): number {
   return getNodes().filter(n => (n.userId ?? 1) === userId).length;
 }
 
+export function getNodesByUser(userId: number): Node[] {
+  return getNodes().filter(n => (n.userId ?? 1) === userId);
+}
+
+export function addNodeTraffic(id: string, up: number, down: number): void {
+  const nodes = getNodes();
+  const index = nodes.findIndex(n => n.id === id);
+  if (index === -1) return;
+  nodes[index].uplinkBytes = (nodes[index].uplinkBytes || 0) + up;
+  nodes[index].downlinkBytes = (nodes[index].downlinkBytes || 0) + down;
+  saveNodes(nodes);
+}
+
+export function resetUserNodesTraffic(userId: number): void {
+  const nodes = getNodes();
+  let changed = false;
+  for (const node of nodes) {
+    if ((node.userId ?? 1) === userId) {
+      node.uplinkBytes = 0;
+      node.downlinkBytes = 0;
+      changed = true;
+    }
+  }
+  if (changed) saveNodes(nodes);
+}
+
+export function suspendUserNodes(userId: number): number {
+  const nodes = getNodes();
+  let count = 0;
+  for (const node of nodes) {
+    if ((node.userId ?? 1) === userId && node.enabled) {
+      node.enabled = false;
+      node.suspended = true;
+      count++;
+    }
+  }
+  if (count > 0) saveNodes(nodes);
+  return count;
+}
+
+export function resumeUserNodes(userId: number): number {
+  const nodes = getNodes();
+  let count = 0;
+  for (const node of nodes) {
+    if ((node.userId ?? 1) === userId && node.suspended) {
+      node.enabled = true;
+      node.suspended = false;
+      count++;
+    }
+  }
+  if (count > 0) saveNodes(nodes);
+  return count;
+}
+
 export function saveNodes(nodes: Node[]): void {
   ensureDataDir();
   writeFileSync(NODES_FILE, JSON.stringify(nodes, null, 2));

@@ -14,6 +14,8 @@ const XRAY_CONFIG_FILE = join(WORK_DIR, 'xray-config.json');
 const XRAY_PATH = join(WORK_DIR, 'bin', process.platform === 'win32' ? 'xray.exe' : 'xray');
 
 const HEARTBEAT_INTERVAL_MS = 15 * 1000;
+const TRAFFIC_INTERVAL_MS = 60 * 1000;
+const API_PORT = parseInt(process.env.XRAY_API_PORT || '10085');
 
 interface AgentConfig {
   panelUrl: string;
@@ -127,6 +129,54 @@ async function pullConfig(cfg: AgentConfig): Promise<void> {
   }
 }
 
+function collectTraffic(): Array<{ n: string; u: number; d: number }> {
+  if (!existsSync(XRAY_PATH)) return [];
+  let raw = '';
+  try {
+    raw = execFileSync(
+      XRAY_PATH,
+      ['api', 'statsquery', `--server=127.0.0.1:${API_PORT}`, '-reset'],
+      { encoding: 'utf-8', timeout: 10000 }
+    );
+  } catch {
+    return [];
+  }
+  const start = raw.indexOf('{');
+  const end = raw.lastIndexOf('}');
+  if (start === -1 || end === -1) return [];
+  let list: any[] = [];
+  try {
+    const json = JSON.parse(raw.slice(start, end + 1));
+    list = json.stat || json.stats || [];
+  } catch {
+    return [];
+  }
+  const map = new Map<string, { u: number; d: number }>();
+  for (const s of list) {
+    const m = String(s.name).match(/^inbound>>>(.+)>>>traffic>>>(uplink|downlink)$/);
+    if (!m) continue;
+    const entry = map.get(m[1]) || { u: 0, d: 0 };
+    if (m[2] === 'uplink') entry.u += Number(s.value) || 0;
+    else entry.d += Number(s.value) || 0;
+    map.set(m[1], entry);
+  }
+  return Array.from(map.entries()).map(([n, v]) => ({ n, u: v.u, d: v.d }));
+}
+
+async function reportTraffic(cfg: AgentConfig): Promise<void> {
+  const items = collectTraffic();
+  if (items.length === 0) return;
+  try {
+    await fetch(`${cfg.panelUrl}/api/agent/traffic`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: cfg.token, items }),
+    });
+  } catch (error: any) {
+    console.error('[Agent] Traffic report failed:', error.message);
+  }
+}
+
 async function tick(cfg: AgentConfig): Promise<void> {
   xrayVersion = detectXrayVersion();
   await reportHeartbeat(cfg);
@@ -141,6 +191,7 @@ async function main(): Promise<void> {
 
   await tick(cfg);
   setInterval(() => { tick(cfg).catch(err => console.error('[Agent] tick error:', err)); }, HEARTBEAT_INTERVAL_MS);
+  setInterval(() => { reportTraffic(cfg).catch(err => console.error('[Agent] traffic error:', err)); }, TRAFFIC_INTERVAL_MS);
 }
 
 process.on('SIGTERM', async () => {

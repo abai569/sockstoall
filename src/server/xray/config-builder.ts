@@ -14,7 +14,7 @@ function buildInbound(node: Node): any {
   const base = {
     port: node.port,
     listen: '::',
-    tag: node.name,
+    tag: node.id,
   };
 
   switch (node.protocol) {
@@ -136,7 +136,7 @@ export function buildXrayConfig(nodes: Node[], routes: RouteDetail[]): any {
     });
     routingRules.push({
       type: 'field',
-      inboundTag: route.node.name,
+      inboundTag: route.node.id,
       outboundTag: socksTag,
     });
   });
@@ -146,18 +146,36 @@ export function buildXrayConfig(nodes: Node[], routes: RouteDetail[]): any {
     tag: 'direct',
   });
 
+  // 本地统计 API 入站（供面板/Agent 采集流量）
+  const apiPort = parseInt(process.env.XRAY_API_PORT || '10085');
+  inbounds.push({
+    listen: '127.0.0.1',
+    port: apiPort,
+    protocol: 'dokodemo-door',
+    settings: { address: '127.0.0.1' },
+    tag: 'api',
+  });
+
   const config: any = {
     log: { loglevel: 'info' },
+    stats: {},
+    api: { tag: 'api', services: ['StatsService'] },
+    policy: {
+      system: {
+        statsInboundUplink: true,
+        statsInboundDownlink: true,
+      },
+    },
     inbounds,
     outbounds,
-  };
-
-  if (routingRules.length > 0) {
-    config.routing = {
+    routing: {
       domainStrategy: 'IPIfNonMatch',
-      rules: routingRules,
-    };
-  }
+      rules: [
+        { type: 'field', inboundTag: ['api'], outboundTag: 'api', enabled: true },
+        ...routingRules,
+      ],
+    },
+  };
 
   return config;
 }

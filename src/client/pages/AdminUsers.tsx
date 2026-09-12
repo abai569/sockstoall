@@ -32,7 +32,7 @@ export default function AdminUsers() {
   const openCreate = () => {
     setEditingUser(null);
     form.resetFields();
-    form.setFieldsValue({ status: 1, role: 'user', maxNodes: 0, trafficLimitGb: 0 });
+    form.setFieldsValue({ status: 1, role: 'user', maxNodes: 0, trafficLimitGb: 0, flowResetTime: 0 });
     setModalOpen(true);
   };
 
@@ -44,6 +44,7 @@ export default function AdminUsers() {
       status: user.status,
       maxNodes: user.maxNodes,
       trafficLimitGb: user.trafficLimitGb,
+      flowResetTime: user.flowResetTime,
       expiredAt: user.expiredAt ? dayjs(user.expiredAt) : null,
     });
     setModalOpen(true);
@@ -58,6 +59,7 @@ export default function AdminUsers() {
         role: values.role,
         status: values.status,
         trafficLimitGb: values.trafficLimitGb,
+        flowResetTime: values.flowResetTime,
         expiredAt: values.expiredAt ? values.expiredAt.valueOf() : 0,
         maxNodes: values.maxNodes,
       };
@@ -132,7 +134,7 @@ export default function AdminUsers() {
     { title: '用户名', dataIndex: 'username', key: 'username' },
     { title: '角色', dataIndex: 'role', key: 'role', render: (r: string) => <Tag color={r === 'admin' ? 'red' : 'blue'}>{r}</Tag> },
     { title: '状态', dataIndex: 'status', key: 'status', render: (s: number) => <Tag color={s === 1 ? 'green' : 'default'}>{s === 1 ? '启用' : '禁用'}</Tag> },
-    { title: '流量配额 (GB)', dataIndex: 'trafficLimitGb', key: 'trafficLimitGb' },
+    { title: '流量 (GB)', key: 'traffic', render: (_: any, record: any) => `${(record.usedFlowGb ?? 0).toFixed(2)} / ${Number(record.trafficLimitGb) > 0 ? record.trafficLimitGb : '不限'}` },
     { title: '代理用量 / 上限', key: 'limit', render: (_: any, record: any) => formatLimit(record) },
     { title: '到期时间', dataIndex: 'expiredAt', key: 'expiredAt', render: (t: number) => t ? dayjs(t).format('YYYY-MM-DD') : '-' },
     {
@@ -200,6 +202,11 @@ export default function AdminUsers() {
             <Col xs={12} sm={12}>
               <Form.Item name="maxNodes" label="最大规则数" extra="入站/出站各自上限，0 表示不限制">
                 <InputNumber min={-1} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col xs={12} sm={12}>
+              <Form.Item name="flowResetTime" label="流量归零日" extra="每月几号归零，0 表示不归零">
+                <InputNumber min={0} max={28} style={{ width: '100%' }} />
               </Form.Item>
             </Col>
             <Col xs={12} sm={12}>

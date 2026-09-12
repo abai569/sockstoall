@@ -28,6 +28,7 @@ import { getNodes, getNodeById } from './node/node-store.js';
 import { getRoutes } from './route/route-store.js';
 import { initDatabase } from './db/index.js';
 import { runAutoRenewCheck, runAutoBuyTrafficCheck, cleanupExpiredOrders } from './shop/jobs.js';
+import { startTrafficCollector, runTrafficResetJob } from './traffic/collector.js';
 
 const app = new Hono();
 const PORT = parseInt(process.env.PORT || '3456');
@@ -98,6 +99,8 @@ console.log('Starting scheduled jobs...');
 setInterval(() => runAutoRenewCheck(), 60 * 1000);  // 每分钟检查自动续费
 setInterval(() => runAutoBuyTrafficCheck(), 10 * 60 * 1000);  // 每 10 分钟检查自动购买流量
 setInterval(() => cleanupExpiredOrders(), 60 * 60 * 1000);  // 每小时清理过期订单
+setInterval(() => { try { runTrafficResetJob(); } catch (e) { console.error('Traffic reset job error:', e); } }, 30 * 60 * 1000);  // 每 30 分钟检查月度归零
+startTrafficCollector();  // 每 60 秒采集本机 Xray 流量
 
 // 启动服务器
 server.listen(PORT, () => {

@@ -7,6 +7,7 @@ import type { ApiResponse } from '../../shared/types.js';
 import { getNodes, getNodeById } from '../node/node-store.js';
 import { getRoutes } from '../route/route-store.js';
 import { buildXrayConfig } from '../xray/config-builder.js';
+import { applyTrafficItems } from '../traffic/collector.js';
 
 export const agentRoutes = new Hono();
 
@@ -44,6 +45,28 @@ agentRoutes.post('/heartbeat', async (c) => {
     .run();
 
   return c.json<ApiResponse>({ success: true });
+});
+
+// Agent 上报本机流量增量
+agentRoutes.post('/traffic', async (c) => {
+  const body = await c.req.json<{ token: string; items: Array<{ n: string; u: number; d: number }> }>();
+
+  const server = findServerByToken(body.token);
+  if (!server) {
+    return c.json<ApiResponse>({ success: false, error: '无效的 token' }, 401);
+  }
+
+  const items = Array.isArray(body.items) ? body.items : [];
+  const valid = items.filter(item => {
+    const node = getNodeById(item.n);
+    return node && (node.serverId ?? 1) === server.id;
+  });
+
+  if (valid.length > 0) {
+    applyTrafficItems(valid.map(item => ({ n: item.n, u: Number(item.u) || 0, d: Number(item.d) || 0 })));
+  }
+
+  return c.text('ok');
 });
 
 // Agent 拉取本服务器的 Xray 配置
