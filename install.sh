@@ -34,13 +34,13 @@ install_base_deps() {
     log_info "Installing base dependencies..."
     case $OS in
         ubuntu|debian)
-            apt-get update -y && apt-get install -y curl wget unzip git
+            apt-get update -y && apt-get install -y curl wget unzip git build-essential python3
             ;;
         centos|rhel|fedora|almalinux|rocky)
-            dnf install -y curl wget unzip git 2>/dev/null || yum install -y curl wget unzip git
+            dnf install -y curl wget unzip git gcc-c++ make python3 2>/dev/null || yum install -y curl wget unzip git gcc-c++ make python3
             ;;
         *)
-            apt-get update -y && apt-get install -y curl wget unzip git
+            apt-get update -y && apt-get install -y curl wget unzip git build-essential python3
             ;;
     esac
 }
@@ -138,6 +138,10 @@ download_release() {
     mkdir -p "$INSTALL_DIR"
     tar -xzf "$tmp/sockstoall.tar.gz" -C "$INSTALL_DIR"
     rm -rf "$tmp"
+
+    log_info "Installing native dependencies..."
+    cd "$INSTALL_DIR"
+    npm install --omit=dev --build-from-source=better-sqlite3
 
     log_info "Release ${tag} installed"
     return 0

@@ -60,6 +60,8 @@ export const routeApi = {
 
 export const xrayApi = {
   status: () => api.get('/xray/status'),
+  checkUpdate: () => api.get('/xray/update'),
+  update: () => api.post('/xray/update'),
   start: () => api.post('/xray/start'),
   stop: () => api.post('/xray/stop'),
   reload: () => api.post('/xray/reload'),

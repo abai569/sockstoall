@@ -6,6 +6,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { nodeApi, routeApi, xrayApi } from '../api/client';
+import { useAuth } from '../hooks/useAuth';
 
 const { Title } = Typography;
 
@@ -16,7 +17,10 @@ export default function Dashboard() {
   const [enabledRoutes, setEnabledRoutes] = useState(0);
   const [xrayStatus, setXrayStatus] = useState<any>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [xrayUpdate, setXrayUpdate] = useState<any>(null);
   const navigate = useNavigate();
+  const { username } = useAuth();
 
   const loadData = async () => {
     setLoading(true);
@@ -29,10 +33,27 @@ export default function Dashboard() {
       setRouteCount(routes.length);
       setEnabledRoutes(routes.filter((r: any) => r.enabled).length);
       setXrayStatus(xrayRes.data.data);
+      if (username === 'admin') {
+        const updateRes = await xrayApi.checkUpdate();
+        setXrayUpdate(updateRes.data.data);
+      }
     } catch (error) {
       console.error('Load dashboard data error:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleXrayUpdate = async () => {
+    setUpdateLoading(true);
+    try {
+      await xrayApi.update();
+      message.success('Xray 升级成功');
+      await loadData();
+    } catch (error: any) {
+      message.error(error.response?.data?.error || 'Xray 升级失败');
+    } finally {
+      setUpdateLoading(false);
     }
   };
 
@@ -112,6 +133,11 @@ export default function Dashboard() {
                 <Button danger icon={<PauseCircleOutlined />} onClick={() => handleXrayAction('stop')} loading={actionLoading}>停止服务</Button>
               ) : (
                 <Button type="primary" icon={<PlayCircleOutlined />} onClick={() => handleXrayAction('start')} loading={actionLoading} disabled={!xrayStatus?.installed}>启动服务</Button>
+              )}
+              {username === 'admin' && xrayUpdate?.updateAvailable && (
+                <Button type="primary" onClick={handleXrayUpdate} loading={updateLoading}>
+                  升级至 v{xrayUpdate.latestVersion}
+                </Button>
               )}
             </Space>
           </Col>

@@ -22,10 +22,8 @@ jobs:
       - run: npm run build:release
 
       - run: |
-          mkdir -p release/node_modules
           cp -r dist release/
           cp package.json release/
-          cp -r node_modules/better-sqlite3 release/node_modules/
           tar -czf sockstoall-${{ github.ref_name }}.tar.gz -C release .
 
       - uses: softprops/action-gh-release@v2

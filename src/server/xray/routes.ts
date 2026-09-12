@@ -26,6 +26,29 @@ xrayRoutes.get('/status', async (c) => {
   });
 });
 
+// 检查 Xray 更新（仅管理员）
+xrayRoutes.get('/update', async (c) => {
+  if ((c as any).get('username') !== 'admin') {
+    return c.json<ApiResponse>({ success: false, error: '仅管理员可以管理 Xray' }, 403);
+  }
+
+  return c.json<ApiResponse>({ success: true, data: await xrayService.checkUpdate() });
+});
+
+// 升级 Xray（仅管理员）
+xrayRoutes.post('/update', async (c) => {
+  if ((c as any).get('username') !== 'admin') {
+    return c.json<ApiResponse>({ success: false, error: '仅管理员可以管理 Xray' }, 403);
+  }
+
+  try {
+    const result = await xrayService.upgrade();
+    return c.json<ApiResponse>({ success: true, data: result });
+  } catch (error: any) {
+    return c.json<ApiResponse>({ success: false, error: error.message || 'Xray 升级失败' }, 400);
+  }
+});
+
 // 手动启动 Xray 服务
 xrayRoutes.post('/start', (c) => {
   const result = xrayService.start();
