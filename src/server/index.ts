@@ -11,7 +11,9 @@ import { join } from 'path';
 
 import { authRoutes } from './auth/routes.js';
 import { authProtectedRoutes } from './auth/auth-protected-routes.js';
+import { adminUserRoutes } from './auth/admin-user-routes.js';
 import { authMiddleware } from './auth/middleware.js';
+import { adminMiddleware } from './auth/admin-middleware.js';
 import { nodeRoutes } from './node/routes.js';
 import { linkRoutes } from './node/link-routes.js';
 import { routeRoutes } from './route/routes.js';
@@ -40,6 +42,8 @@ app.route('/api/auth', authRoutes);
 
 app.use('/api/auth/*', authMiddleware);
 app.route('/api/auth', authProtectedRoutes);
+app.use('/api/auth/admin/*', adminMiddleware);
+app.route('/api/auth/admin', adminUserRoutes);
 
 app.use('/api/link/*', authMiddleware);
 app.use('/api/nodes/*', authMiddleware);

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import MainLayout from './layouts/MainLayout';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Nodes from './pages/Nodes';
 import RouteList from './pages/RouteList';
@@ -12,6 +13,7 @@ import Orders from './pages/Orders';
 import AdminPackages from './pages/AdminPackages';
 import AdminOrders from './pages/AdminOrders';
 import AdminPackageGroups from './pages/AdminPackageGroups';
+import AdminUsers from './pages/AdminUsers';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
@@ -31,6 +33,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginRoute />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/" element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="nodes" element={<Nodes />} />
@@ -41,6 +44,7 @@ function App() {
             <Route path="admin/packages" element={<AdminPackages />} />
             <Route path="admin/package-groups" element={<AdminPackageGroups />} />
             <Route path="admin/orders" element={<AdminOrders />} />
+            <Route path="admin/users" element={<AdminUsers />} />
             <Route path="settings" element={<Settings />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

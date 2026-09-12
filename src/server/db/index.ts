@@ -193,6 +193,9 @@ export function initDatabase() {
   addColumnIfMissing('users', 'max_connections', 'INTEGER DEFAULT 0');
   addColumnIfMissing('users', 'max_ip_access', 'INTEGER DEFAULT 0');
   addColumnIfMissing('users', 'role', "TEXT NOT NULL DEFAULT 'user'");
+  addColumnIfMissing('users', 'status', 'INTEGER NOT NULL DEFAULT 1');
+  addColumnIfMissing('users', 'traffic_limit_gb', 'REAL DEFAULT 0');
+  addColumnIfMissing('users', 'max_nodes', 'INTEGER DEFAULT 5');
 
   seedUsers();
 

@@ -6,12 +6,15 @@ export const users = sqliteTable('users', {
   username: text('username').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   role: text('role').notNull().default('user'),
+  status: integer('status').notNull().default(1), // 0=禁用，1=启用
+  trafficLimitGb: real('traffic_limit_gb').default(0), // 流量配额 GB
+  expiredAt: integer('expired_at').default(0), // 到期时间戳
+  maxNodes: integer('max_nodes').default(5), // 最大节点数
   balance: integer('balance').default(0),
   trafficFlow: real('traffic_flow').default(0),
   totalFlowGb: real('total_flow_gb').default(0),
   usedFlowGb: real('used_flow_gb').default(0),
   maxRules: integer('max_rules').default(0),
-  expiredAt: integer('expired_at').default(0),
   speedLimitMbps: integer('speed_limit_mbps').default(0),
   maxConnections: integer('max_connections').default(0),
   maxIpAccess: integer('max_ip_access').default(0),
