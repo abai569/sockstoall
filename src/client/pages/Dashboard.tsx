@@ -25,16 +25,19 @@ export default function Dashboard() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [nodesRes, routesRes, xrayRes] = await Promise.all([
-        nodeApi.list(), routeApi.list(), xrayApi.status(),
+      const [nodesRes, routesRes] = await Promise.all([
+        nodeApi.list(), routeApi.list(),
       ]);
       setNodeCount(nodesRes.data.data?.total || 0);
       const routes = routesRes.data.data?.items || [];
       setRouteCount(routes.length);
       setEnabledRoutes(routes.filter((r: any) => r.enabled).length);
-      setXrayStatus(xrayRes.data.data);
       if (isAdmin) {
-        const updateRes = await xrayApi.checkUpdate();
+        const [xrayRes, updateRes] = await Promise.all([
+          xrayApi.status(),
+          xrayApi.checkUpdate(),
+        ]);
+        setXrayStatus(xrayRes.data.data);
         setXrayUpdate(updateRes.data.data);
       }
     } catch (error) {
@@ -94,70 +97,72 @@ export default function Dashboard() {
     <div>
       <Title level={4} style={{ marginBottom: 24 }}>系统总览</Title>
       
-      <Card 
-        title="Xray 服务" 
-        style={{ marginBottom: 24 }}
-        extra={
-          xrayStatus?.installed ? (
-            <Tag color="success" icon={<CheckCircleOutlined />}>已安装 {xrayStatus.version}</Tag>
-          ) : (
-            <Tag color="error">未安装</Tag>
-          )
-        }
-      >
-        {xrayStatus && !xrayStatus.installed && (
-          <Alert
-            message="Xray 未安装"
-            description="请将 xray 可执行文件放到 bin/ 目录，或从 https://github.com/XTLS/Xray-core/releases 下载"
-            type="warning" showIcon style={{ marginBottom: 16 }}
-          />
-        )}
-        <Row gutter={16}>
-          <Col span={6}>
-            <Statistic
-              title="服务状态"
-              value={xrayStatus?.running ? '运行中' : '已停止'}
-              valueStyle={{ color: xrayStatus?.running ? '#52c41a' : '#8c8c8c' }}
-              prefix={xrayStatus?.running ? <ThunderboltOutlined /> : null}
+      {isAdmin && (
+        <Card
+          title="Xray 服务"
+          style={{ marginBottom: 24 }}
+          extra={
+            xrayStatus?.installed ? (
+              <Tag color="success" icon={<CheckCircleOutlined />}>已安装 {xrayStatus.version}</Tag>
+            ) : (
+              <Tag color="error">未安装</Tag>
+            )
+          }
+        >
+          {xrayStatus && !xrayStatus.installed && (
+            <Alert
+              message="Xray 未安装"
+              description="请将 xray 可执行文件放到 bin/ 目录，或从 https://github.com/XTLS/Xray-core/releases 下载"
+              type="warning" showIcon style={{ marginBottom: 16 }}
             />
-          </Col>
-          <Col span={6}>
-            <Statistic title="运行时长" value={xrayStatus?.running ? formatUptime(xrayStatus.uptime) : '-'} />
-          </Col>
-          <Col span={6}>
-            <Statistic title="PID" value={xrayStatus?.pid || '-'} />
-          </Col>
-          <Col span={6}>
-            <Space>
-              {xrayStatus?.running ? (
-                <Button danger onClick={() => handleXrayAction('stop')} loading={actionLoading}>停止服务</Button>
-              ) : (
-                <Button type="primary" onClick={() => handleXrayAction('start')} loading={actionLoading} disabled={!xrayStatus?.installed}>启动服务</Button>
-              )}
-              {isAdmin && xrayUpdate?.updateAvailable && (
-                <Button type="primary" onClick={handleXrayUpdate} loading={updateLoading}>
-                  升级至 v{xrayUpdate.latestVersion}
-                </Button>
-              )}
-            </Space>
-          </Col>
-        </Row>
-      </Card>
+          )}
+          <Row gutter={16}>
+            <Col span={6}>
+              <Statistic
+                title="服务状态"
+                value={xrayStatus?.running ? '运行中' : '已停止'}
+                valueStyle={{ color: xrayStatus?.running ? '#52c41a' : '#8c8c8c' }}
+                prefix={xrayStatus?.running ? <ThunderboltOutlined /> : null}
+              />
+            </Col>
+            <Col span={6}>
+              <Statistic title="运行时长" value={xrayStatus?.running ? formatUptime(xrayStatus.uptime) : '-'} />
+            </Col>
+            <Col span={6}>
+              <Statistic title="PID" value={xrayStatus?.pid || '-'} />
+            </Col>
+            <Col span={6}>
+              <Space>
+                {xrayStatus?.running ? (
+                  <Button danger onClick={() => handleXrayAction('stop')} loading={actionLoading}>停止服务</Button>
+                ) : (
+                  <Button type="primary" onClick={() => handleXrayAction('start')} loading={actionLoading} disabled={!xrayStatus?.installed}>启动服务</Button>
+                )}
+                {xrayUpdate?.updateAvailable && (
+                  <Button type="primary" onClick={handleXrayUpdate} loading={updateLoading}>
+                    升级至 v{xrayUpdate.latestVersion}
+                  </Button>
+                )}
+              </Space>
+            </Col>
+          </Row>
+        </Card>
+      )}
       
       <Row gutter={[16, 16]}>
         <Col xs={24} sm={12} lg={6}>
           <Card hoverable onClick={() => navigate('/nodes')}>
-            <Statistic title="节点数量" value={nodeCount} prefix={<NodeIndexOutlined />} valueStyle={{ color: '#1890ff' }} />
+            <Statistic title="入站代理" value={nodeCount} prefix={<NodeIndexOutlined />} valueStyle={{ color: '#1890ff' }} />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <Card hoverable onClick={() => navigate('/routes')}>
-            <Statistic title="转发规则" value={routeCount} prefix={<SwapOutlined />} valueStyle={{ color: '#722ed1' }} />
+            <Statistic title="出站代理" value={routeCount} prefix={<SwapOutlined />} valueStyle={{ color: '#722ed1' }} />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <Card>
-            <Statistic title="已启用规则" value={enabledRoutes} prefix={<CheckCircleOutlined />} valueStyle={{ color: '#52c41a' }} />
+            <Statistic title="已启用出站" value={enabledRoutes} prefix={<CheckCircleOutlined />} valueStyle={{ color: '#52c41a' }} />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
