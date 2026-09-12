@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Table, Button, Tag, Modal, Form, Input, InputNumber, DatePicker, Switch, Select, message, Popconfirm, Space } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, CloudServerOutlined } from '@ant-design/icons';
 import { api } from '../api/client';
 import dayjs from 'dayjs';
 
@@ -11,6 +11,10 @@ export default function AdminUsers() {
   const [editingUser, setEditingUser] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm();
+  const [assignUser, setAssignUser] = useState<any>(null);
+  const [allServers, setAllServers] = useState<any[]>([]);
+  const [assignedIds, setAssignedIds] = useState<number[]>([]);
+  const [assignSaving, setAssignSaving] = useState(false);
 
   useEffect(() => { loadData(); }, []);
 
@@ -79,6 +83,34 @@ export default function AdminUsers() {
     }
   };
 
+  const openAssign = async (user: any) => {
+    setAssignUser(user);
+    try {
+      const [serversRes, assignedRes] = await Promise.all([
+        api.get('/server/servers'),
+        api.get(`/auth/admin/users/${user.id}/servers`),
+      ]);
+      setAllServers(serversRes.data.data || []);
+      setAssignedIds(assignedRes.data.data || []);
+    } catch (error) {
+      message.error('加载服务器失败');
+    }
+  };
+
+  const saveAssign = async () => {
+    if (!assignUser) return;
+    setAssignSaving(true);
+    try {
+      await api.put(`/auth/admin/users/${assignUser.id}/servers`, { serverIds: assignedIds });
+      message.success('服务器分配已保存');
+      setAssignUser(null);
+    } catch (error: any) {
+      message.error(error.response?.data?.error || '保存失败');
+    } finally {
+      setAssignSaving(false);
+    }
+  };
+
   const handleDelete = async (id: number) => {
     try {
       await api.delete(`/auth/admin/users/${id}`);
@@ -106,6 +138,9 @@ export default function AdminUsers() {
       render: (_: any, record: any) => (
         <Space>
           <Button type="link" icon={<EditOutlined />} onClick={() => openEdit(record)}>编辑</Button>
+          {record.role !== 'admin' && (
+            <Button type="link" icon={<CloudServerOutlined />} onClick={() => openAssign(record)}>分配服务器</Button>
+          )}
           {record.role !== 'admin' && (
             <Popconfirm title="确定删除？" onConfirm={() => handleDelete(record.id)} okText="确定" cancelText="取消">
               <Button type="link" danger icon={<DeleteOutlined />}>删除</Button>
@@ -159,6 +194,26 @@ export default function AdminUsers() {
             <DatePicker style={{ width: '100%' }} />
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title={`分配服务器 - ${assignUser?.username || ''}`}
+        open={!!assignUser}
+        onOk={saveAssign}
+        onCancel={() => setAssignUser(null)}
+        confirmLoading={assignSaving}
+        okText="保存"
+        cancelText="取消"
+      >
+        <p style={{ color: '#666', marginBottom: 12 }}>该用户只能在此处勾选的服务器上创建节点，本机也需显式勾选。</p>
+        <Select
+          mode="multiple"
+          style={{ width: '100%' }}
+          placeholder="选择服务器"
+          value={assignedIds}
+          onChange={(v) => setAssignedIds(v)}
+          options={allServers.map(s => ({ value: s.id, label: `${s.name}${s.isLocal ? '（本机）' : ''}` }))}
+        />
       </Modal>
     </div>
   );

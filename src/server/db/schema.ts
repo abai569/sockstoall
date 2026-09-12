@@ -150,6 +150,14 @@ export const balanceLogs = sqliteTable('balance_logs', {
   createdAt: text('created_at').default(new Date().toISOString()),
 });
 
+// 用户-服务器分配表
+export const userServers = sqliteTable('user_servers', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').notNull(),
+  serverId: integer('server_id').notNull(),
+  createdAt: text('created_at').default(new Date().toISOString()),
+});
+
 // 服务器表
 export const servers = sqliteTable('servers', {
   id: integer('id').primaryKey({ autoIncrement: true }),

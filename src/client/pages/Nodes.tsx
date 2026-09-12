@@ -110,7 +110,7 @@ export default function Nodes() {
     form.resetFields();
     form.setFieldsValue({ 
       protocol: 'vless',
-      serverId: filterServerId === 'all' ? 1 : filterServerId,
+      serverId: filterServerId === 'all' ? (servers[0]?.id ?? 1) : filterServerId,
       port: generateRandomPort(),
       listen: '0.0.0.0', 
       config: { 

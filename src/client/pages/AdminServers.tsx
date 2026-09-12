@@ -86,6 +86,7 @@ export default function AdminServers() {
       render: (s: string) => <Tag color={s === 'online' ? 'green' : 'default'}>{s === 'online' ? '在线' : '离线'}</Tag>,
     },
     { title: '节点数', dataIndex: 'nodeCount', key: 'nodeCount', width: 80 },
+    { title: '已分配用户', dataIndex: 'assignedUserCount', key: 'assignedUserCount', width: 100 },
     { title: 'Xray 版本', dataIndex: 'xrayVersion', key: 'xrayVersion', render: (v: string) => v || '-' },
     {
       title: '最后心跳', dataIndex: 'lastHeartbeat', key: 'lastHeartbeat',

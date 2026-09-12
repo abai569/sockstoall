@@ -10,6 +10,7 @@ import { testNodeLatency } from './latency-tester.js';
 import { xrayService } from '../xray/service.js';
 import { getRoutes } from '../route/route-store.js';
 import { getUserById } from '../auth/user-store.js';
+import { getAllowedServerIds } from '../server/user-server-store.js';
 import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
@@ -210,6 +211,11 @@ nodeRoutes.post('/', async (c) => {
     const userId = (c as any).get('userId');
 
     if (role !== 'admin') {
+      const targetServerId = body.serverId ?? 1;
+      const allowed = getAllowedServerIds(userId);
+      if (!allowed.includes(targetServerId)) {
+        return c.json<ApiResponse>({ success: false, error: '你没有该服务器的使用权限' }, 403);
+      }
       const user = await getUserById(userId);
       const limit = user?.maxNodes ?? 0;
       if (limit > 0 && countNodesByUser(userId) >= limit) {

@@ -6,6 +6,7 @@ import type { ApiResponse } from '../../shared/types.js';
 import { createUser, getUser } from './user-store.js';
 import { hashPassword } from './password.js';
 import { countNodesByUser } from '../node/node-store.js';
+import { getAllowedServerIds, setAllowedServers } from '../server/user-server-store.js';
 
 export const adminUserRoutes = new Hono();
 
@@ -114,6 +115,28 @@ adminUserRoutes.put('/users/:id', async (c) => {
   return c.json<ApiResponse>({ success: true });
 });
 
+// 获取用户已分配的服务器（管理员）
+adminUserRoutes.get('/users/:id/servers', (c) => {
+  const id = parseInt(c.req.param('id'));
+  return c.json<ApiResponse>({ success: true, data: getAllowedServerIds(id) });
+});
+
+// 设置用户可用的服务器（管理员）
+adminUserRoutes.put('/users/:id/servers', async (c) => {
+  const id = parseInt(c.req.param('id'));
+  const body = await c.req.json<{ serverIds: number[] }>();
+
+  const user = db.query.users.findFirst({ where: eq(users.id, id) }).sync();
+  if (!user) {
+    return c.json<ApiResponse>({ success: false, error: '用户不存在' }, 404);
+  }
+
+  const serverIds = Array.isArray(body.serverIds) ? body.serverIds.map(Number).filter(n => !isNaN(n)) : [];
+  setAllowedServers(id, serverIds);
+
+  return c.json<ApiResponse>({ success: true, data: serverIds });
+});
+
 // 删除用户（管理员）
 adminUserRoutes.delete('/users/:id', (c) => {
   const id = parseInt(c.req.param('id'));
@@ -133,6 +156,7 @@ adminUserRoutes.delete('/users/:id', (c) => {
   db.delete(users)
     .where(eq(users.id, id))
     .run();
+  setAllowedServers(id, []);
   
   return c.json<ApiResponse>({ success: true });
 });

@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { randomBytes } from 'crypto';
 import type { ApiResponse } from '../../shared/types.js';
 import { getNodes } from '../node/node-store.js';
+import { getAllowedServerIds, countUsersForServer } from './user-server-store.js';
 
 export const serverRoutes = new Hono();
 
@@ -34,11 +35,18 @@ function buildUninstallCommand(baseUrl: string, token: string): string {
   return `curl -fsSL "${baseUrl}/api/agent/install.sh?token=${token}" | bash -s -- uninstall`;
 }
 
-// 获取服务器列表（管理员）
+// 获取服务器列表（管理员看全部，普通用户只看被分配的）
 serverRoutes.get('/servers', (c) => {
-  const list = db.query.servers.findMany({
+  const isAdmin = (c as any).get('role') === 'admin';
+  const userId = (c as any).get('userId');
+  let list = db.query.servers.findMany({
     orderBy: [servers.id],
   }).sync();
+
+  if (!isAdmin) {
+    const allowed = getAllowedServerIds(userId);
+    list = list.filter(s => allowed.includes(s.id));
+  }
 
   const nodes = getNodes();
   const baseUrl = getPanelBaseUrl(c);
@@ -55,6 +63,7 @@ serverRoutes.get('/servers', (c) => {
     os: server.os,
     arch: server.arch,
     nodeCount: nodes.filter(n => (n.serverId ?? 1) === server.id).length,
+    assignedUserCount: countUsersForServer(server.id),
     installCommand: server.isLocal === 1 ? null : buildInstallCommand(baseUrl, server.agentToken),
     uninstallCommand: server.isLocal === 1 ? null : buildUninstallCommand(baseUrl, server.agentToken),
     createdAt: server.createdAt,
