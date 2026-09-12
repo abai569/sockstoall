@@ -6,6 +6,7 @@ import { randomBytes } from 'crypto';
 import type { ApiResponse } from '../../shared/types.js';
 import { getNodes } from '../node/node-store.js';
 import { getAllowedServerIds, countUsersForServer } from './user-server-store.js';
+import { getPublicIPv4 } from '../net/public-ip.js';
 
 export const serverRoutes = new Hono();
 
@@ -46,6 +47,16 @@ serverRoutes.get('/servers', (c) => {
   if (!isAdmin) {
     const allowed = getAllowedServerIds(userId);
     list = list.filter(s => allowed.includes(s.id));
+  }
+
+  // 本机地址为空时自动探测公网 IPv4
+  const localServer = list.find(s => s.isLocal === 1);
+  if (localServer && (!localServer.address || localServer.address === 'localhost')) {
+    const ip = getPublicIPv4();
+    if (ip) {
+      db.update(servers).set({ address: ip, updatedAt: new Date().toISOString() }).where(eq(servers.id, localServer.id)).run();
+      localServer.address = ip;
+    }
   }
 
   const nodes = getNodes();
@@ -105,6 +116,31 @@ serverRoutes.post('/servers', async (c) => {
       installCommand: buildInstallCommand(baseUrl, agentToken),
     },
   });
+});
+
+// 编辑服务器（管理员）
+serverRoutes.put('/servers/:id', async (c) => {
+  if (!requireAdmin(c)) {
+    return c.json<ApiResponse>({ success: false, error: '需要管理员权限' }, 403);
+  }
+  const id = parseInt(c.req.param('id'));
+  const body = await c.req.json<{ name?: string; address?: string }>();
+
+  const server = db.query.servers.findFirst({
+    where: eq(servers.id, id),
+  }).sync();
+
+  if (!server) {
+    return c.json<ApiResponse>({ success: false, error: '服务器不存在' }, 404);
+  }
+
+  const updateData: any = { updatedAt: new Date().toISOString() };
+  if (body.name !== undefined && body.name.trim()) updateData.name = body.name.trim();
+  if (body.address !== undefined && body.address.trim()) updateData.address = body.address.trim();
+
+  db.update(servers).set(updateData).where(eq(servers.id, id)).run();
+
+  return c.json<ApiResponse>({ success: true });
 });
 
 // 轮换 Agent Token（管理员）

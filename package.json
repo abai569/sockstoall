@@ -1,6 +1,6 @@
 {
   "name": "sockstoall",
-  "version": "1.9.1",
+  "version": "1.10.0",
   "description": "多协议代理节点管理 + SOCKS 转发面板",
   "type": "module",
   "scripts": {

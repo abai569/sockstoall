@@ -2,35 +2,15 @@
  * 分享链接生成器
  */
 
-import { execSync } from 'child_process';
 import type { Node } from '../../shared/types.js';
-
-let cachedShareHost: string | null = null;
-
-function detectPublicIPv4(): string | null {
-  if (cachedShareHost) return cachedShareHost;
-  const urls = [
-    'https://api4.ipify.org',
-    'https://ipv4.icanhazip.com',
-    'https://v4.ident.me',
-  ];
-  for (const url of urls) {
-    try {
-      const ip = execSync(`curl -fsSL --max-time 3 "${url}" 2>/dev/null || wget -qO- --timeout=3 "${url}" 2>/dev/null`, { timeout: 5000, encoding: 'utf-8' }).trim();
-      if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
-        cachedShareHost = ip;
-        return ip;
-      }
-    } catch { /* ignore */ }
-  }
-  return null;
-}
+import { formatHost, getPublicIPv4, getPublicIPv6 } from '../net/public-ip.js';
 
 function resolveShareHost(node: Node): string {
-  if (node.listen && node.listen !== '0.0.0.0' && node.listen !== '::') {
-    return node.listen;
-  }
-  return detectPublicIPv4() || '127.0.0.1';
+  const host = node.listen && node.listen !== '0.0.0.0' && node.listen !== '::'
+    ? node.listen
+    : (node.shareHost || '');
+  if (host) return formatHost(host);
+  return formatHost(getPublicIPv4() || getPublicIPv6() || '127.0.0.1');
 }
 
 /**

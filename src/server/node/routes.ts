@@ -11,37 +11,10 @@ import { xrayService } from '../xray/service.js';
 import { getRoutes } from '../route/route-store.js';
 import { getUserById } from '../auth/user-store.js';
 import { getAllowedServerIds } from '../server/user-server-store.js';
+import { resolveNodeShareHost } from './share-host.js';
 import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import { join } from 'path';
-
-let cachedPublicIp: string | null = null;
-
-function getPublicIPv4(): string {
-  if (cachedPublicIp) return cachedPublicIp;
-  const urls = [
-    'https://api4.ipify.org',
-    'https://ipv4.icanhazip.com',
-    'https://v4.ident.me',
-  ];
-  for (const url of urls) {
-    try {
-      const ip = execSync(`curl -fsSL --max-time 3 "${url}" 2>/dev/null || wget -qO- --timeout=3 "${url}" 2>/dev/null`, { timeout: 5000, encoding: 'utf-8' }).trim();
-      if (/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(ip)) {
-        cachedPublicIp = ip;
-        return ip;
-      }
-    } catch { /* ignore */ }
-  }
-  return '127.0.0.1';
-}
-
-function resolveListenAddress(listen?: string): string {
-  if (!listen || listen === '0.0.0.0' || listen === '::') {
-    return getPublicIPv4();
-  }
-  return listen;
-}
 
 export const nodeRoutes = new Hono();
 
@@ -160,11 +133,14 @@ nodeRoutes.get('/', (c) => {
     const serverId = parseInt(serverIdParam);
     nodes = nodes.filter(n => (n.serverId ?? 1) === serverId);
   }
-  const nodesWithLinks = nodes.map(node => ({
-    ...node,
-    listen: resolveListenAddress(node.listen),
-    shareLink: generateShareLink(node)
-  }));
+  const nodesWithLinks = nodes.map(node => {
+    const host = resolveNodeShareHost(node);
+    return {
+      ...node,
+      listen: host,
+      shareLink: generateShareLink({ ...node, listen: host }),
+    };
+  });
   const response: ListResponse<any> = { items: nodesWithLinks, total: nodesWithLinks.length };
   return c.json<ApiResponse<ListResponse<any>>>({ success: true, data: response });
 });
@@ -178,9 +154,10 @@ nodeRoutes.get('/:id', (c) => {
     return c.json<ApiResponse>({ success: false, error: '节点不存在' }, 404);
   }
   
-  return c.json<ApiResponse<any>>({ 
-    success: true, 
-    data: { ...node, listen: resolveListenAddress(node.listen), shareLink: generateShareLink(node) } 
+  const host = resolveNodeShareHost(node);
+  return c.json<ApiResponse<any>>({
+    success: true,
+    data: { ...node, listen: host, shareLink: generateShareLink({ ...node, listen: host }) }
   });
 });
 
@@ -228,7 +205,7 @@ nodeRoutes.post('/', async (c) => {
     
     return c.json<ApiResponse<any>>({ 
       success: true, 
-      data: { ...node, shareLink: generateShareLink(node) }
+      data: { ...node, listen: resolveNodeShareHost(node), shareLink: generateShareLink({ ...node, listen: resolveNodeShareHost(node) }) }
     }, 201);
   } catch (error) {
     console.error('Create node error:', error);
@@ -268,7 +245,7 @@ nodeRoutes.put('/:id', async (c) => {
     
     return c.json<ApiResponse<any>>({ 
       success: true, 
-      data: { ...node, shareLink: generateShareLink(node) }
+      data: { ...node, listen: resolveNodeShareHost(node), shareLink: generateShareLink({ ...node, listen: resolveNodeShareHost(node) }) }
     });
   } catch (error) {
     console.error('Update node error:', error);
@@ -311,7 +288,7 @@ nodeRoutes.patch('/:id/toggle', async (c) => {
     }
     
     reloadXray();
-    return c.json<ApiResponse<any>>({ success: true, data: { ...node, shareLink: generateShareLink(node) } });
+    return c.json<ApiResponse<any>>({ success: true, data: { ...node, listen: resolveNodeShareHost(node), shareLink: generateShareLink({ ...node, listen: resolveNodeShareHost(node) }) } });
   } catch (error) {
     console.error('Toggle node error:', error);
     return c.json<ApiResponse>({ success: false, error: '操作失败' }, 500);

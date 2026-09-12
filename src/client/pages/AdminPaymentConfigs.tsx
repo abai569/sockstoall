@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Input, Switch, Select, message, Tag, Row, Col } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, message, Tag, Row, Col } from 'antd';
 import { PlusOutlined, EditOutlined } from '@ant-design/icons';
 import { api } from '../api/client';
 
@@ -13,6 +13,7 @@ export default function AdminPaymentConfigs() {
   const [configs, setConfigs] = useState<any[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<any>(null);
+  const [channel, setChannel] = useState('');
   const [form] = Form.useForm();
 
   useEffect(() => { loadData(); }, []);
@@ -31,15 +32,17 @@ export default function AdminPaymentConfigs() {
 
   const openCreate = () => {
     setEditing(null);
+    setChannel('');
     form.resetFields();
     setModalOpen(true);
   };
 
   const openEdit = (record: any) => {
     setEditing(record);
+    setChannel(record.channel);
     let configData = {};
     try { configData = JSON.parse(record.config); } catch {}
-    form.setFieldsValue({ channel: record.channel, enabled: record.enabled === 1, ...configData });
+    form.setFieldsValue({ channel: record.channel, enabled: record.enabled, ...configData });
     setModalOpen(true);
   };
 
@@ -110,13 +113,13 @@ export default function AdminPaymentConfigs() {
             </Form.Item>
           </Col>
           <Col xs={12} sm={6}>
-            <Form.Item name="enable_alipay" label="启用支付宝" valuePropName="checked" initialValue={true}>
-              <Switch />
+            <Form.Item name="enable_alipay" label="启用支付宝" initialValue={true}>
+              <Select options={[{ value: true, label: '启用' }, { value: false, label: '禁用' }]} />
             </Form.Item>
           </Col>
           <Col xs={12} sm={6}>
-            <Form.Item name="enable_wxpay" label="启用微信支付" valuePropName="checked" initialValue={true}>
-              <Switch />
+            <Form.Item name="enable_wxpay" label="启用微信支付" initialValue={true}>
+              <Select options={[{ value: true, label: '启用' }, { value: false, label: '禁用' }]} />
             </Form.Item>
           </Col>
         </Row>
@@ -182,18 +185,18 @@ export default function AdminPaymentConfigs() {
       <Modal title={editing ? '编辑支付配置' : '添加支付渠道'} open={modalOpen} onOk={handleSave} onCancel={() => setModalOpen(false)} okText="保存" cancelText="取消" width={640}>
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
           <Row gutter={[16, 0]}>
-            <Col xs={24} sm={16}>
+            <Col xs={16} sm={16}>
               <Form.Item name="channel" label="支付渠道" rules={[{ required: true }]} extra={editing ? '不可修改' : ''}>
-                <Select options={CHANNELS} disabled={!!editing} />
+                <Select options={CHANNELS} disabled={!!editing} onChange={(v) => setChannel(v)} />
               </Form.Item>
             </Col>
-            <Col xs={24} sm={8}>
-              <Form.Item name="enabled" label="启用" valuePropName="checked" initialValue={true}>
-                <Switch checkedChildren="启用" unCheckedChildren="禁用" />
+            <Col xs={8} sm={8}>
+              <Form.Item name="enabled" label="启用" initialValue={1}>
+                <Select options={[{ value: 1, label: '启用' }, { value: 0, label: '禁用' }]} />
               </Form.Item>
             </Col>
           </Row>
-          {form.getFieldValue('channel') && renderFields(form.getFieldValue('channel'))}
+          {channel && renderFields(channel)}
         </Form>
       </Modal>
     </div>

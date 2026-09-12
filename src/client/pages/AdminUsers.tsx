@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Tag, Modal, Form, Input, InputNumber, DatePicker, Switch, Select, message, Popconfirm, Space, Row, Col } from 'antd';
+import { Table, Button, Tag, Modal, Form, Input, InputNumber, DatePicker, Select, message, Popconfirm, Space, Row, Col } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, CloudServerOutlined } from '@ant-design/icons';
 import { api } from '../api/client';
 import dayjs from 'dayjs';
@@ -33,14 +33,14 @@ export default function AdminUsers() {
   const openCreate = () => {
     setEditingUser(null);
     form.resetFields();
-    form.setFieldsValue({ status: true, role: 'user', maxNodes: 5, maxRules: 0, trafficLimitGb: 0 });
+    form.setFieldsValue({ status: 1, role: 'user', maxNodes: 5, maxRules: 0, trafficLimitGb: 0 });
     setModalOpen(true);
   };
 
   const openEdit = (user: any) => {
     setEditingUser(user);
     form.setFieldsValue({
-      status: user.status === 1,
+      status: user.status,
       maxNodes: user.maxNodes,
       maxRules: user.maxRules,
       trafficLimitGb: user.trafficLimitGb,
@@ -192,8 +192,8 @@ export default function AdminUsers() {
               </>
             )}
             <Col xs={24} sm={12}>
-              <Form.Item name="status" label="启用" valuePropName="checked">
-                <Switch checkedChildren="启用" unCheckedChildren="禁用" />
+              <Form.Item name="status" label="启用">
+                <Select options={[{ value: 1, label: '启用' }, { value: 0, label: '禁用' }]} />
               </Form.Item>
             </Col>
             <Col xs={24} sm={12}>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Table, Button, Tag, Modal, Form, Input, message, Popconfirm, Typography, Row, Col } from 'antd';
-import { PlusOutlined, DeleteOutlined, CopyOutlined, ReloadOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, CopyOutlined, ReloadOutlined, EditOutlined } from '@ant-design/icons';
 import { api } from '../api/client';
 
 const { Paragraph, Text } = Typography;
@@ -10,7 +10,27 @@ export default function AdminServers() {
   const [servers, setServers] = useState<any[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [installModal, setInstallModal] = useState<{ open: boolean; command: string; title: string }>({ open: false, command: '', title: '安装' });
+  const [editServer, setEditServer] = useState<any>(null);
   const [form] = Form.useForm();
+  const [editForm] = Form.useForm();
+
+  const openEdit = (record: any) => {
+    setEditServer(record);
+    editForm.setFieldsValue({ name: record.name, address: record.address });
+  };
+
+  const saveEdit = async () => {
+    try {
+      const values = await editForm.validateFields();
+      await api.put(`/server/servers/${editServer.id}`, values);
+      message.success('已保存');
+      setEditServer(null);
+      loadData();
+    } catch (error: any) {
+      if (error.errorFields) return;
+      message.error(error.response?.data?.error || '保存失败');
+    }
+  };
 
   useEffect(() => { loadData(); }, []);
 
@@ -96,6 +116,7 @@ export default function AdminServers() {
       title: '操作', key: 'action',
       render: (_: any, record: any) => (
         <>
+          <Button type="link" icon={<EditOutlined />} onClick={() => openEdit(record)}>编辑</Button>
           {!record.isLocal && (
             <Button type="link" icon={<CopyOutlined />} onClick={() => setInstallModal({ open: true, command: record.installCommand, title: '安装' })}>安装命令</Button>
           )}
@@ -136,6 +157,23 @@ export default function AdminServers() {
             <Col xs={24} sm={12}>
               <Form.Item name="address" label="公网地址" rules={[{ required: true, message: '请输入地址' }]}>
                 <Input placeholder="远程服务器公网 IP 或域名" />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
+
+      <Modal title="编辑服务器" open={!!editServer} onOk={saveEdit} onCancel={() => setEditServer(null)} okText="保存" cancelText="取消">
+        <Form form={editForm} layout="vertical" style={{ marginTop: 16 }}>
+          <Row gutter={[16, 0]}>
+            <Col xs={24} sm={12}>
+              <Form.Item name="name" label="名称" rules={[{ required: true, message: '请输入名称' }]}>
+                <Input placeholder="例如：东京节点" />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item name="address" label="公网地址" extra="IP 或解析好的域名，用于生成分享链接">
+                <Input placeholder="1.2.3.4 或 node.example.com" />
               </Form.Item>
             </Col>
           </Row>

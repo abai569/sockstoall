@@ -38,6 +38,7 @@ interface BaseNode {
   enabled: boolean; // 是否启用
   serverId?: number; // 所属服务器，默认 1（本机）
   userId?: number; // 所有者用户，默认 1（管理员）
+  shareHost?: string; // 分享地址（域名/IP），留空自动
   remark?: string;
   createdAt: string;
   updatedAt: string;

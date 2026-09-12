@@ -13,7 +13,7 @@ export interface RouteDetail {
 function buildInbound(node: Node): any {
   const base = {
     port: node.port,
-    listen: '0.0.0.0',
+    listen: '::',
     tag: node.name,
   };
 

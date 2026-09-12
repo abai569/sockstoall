@@ -112,7 +112,7 @@ export default function Nodes() {
       protocol: 'vless',
       serverId: filterServerId === 'all' ? (servers[0]?.id ?? 1) : filterServerId,
       port: generateRandomPort(),
-      listen: '0.0.0.0', 
+      shareHost: '',
       config: { 
         uuid: generateUUID(),
         tls: 'none', 
@@ -312,13 +312,13 @@ export default function Nodes() {
               </Form.Item>
             </Col>
             <Col xs={12} sm={12}>
-              <Form.Item name="listen" label="监听地址">
-                <Input placeholder="0.0.0.0" />
+              <Form.Item name="shareHost" label="分享地址" extra="留空自动，可填解析好的域名">
+                <Input placeholder="如 node.example.com" />
               </Form.Item>
             </Col>
-            <Col span={24}>
+            <Col xs={12} sm={12}>
               <Form.Item name="remark" label="备注">
-                <Input.TextArea rows={2} placeholder="可选备注" />
+                <Input placeholder="可选备注" />
               </Form.Item>
             </Col>
           </Row>
@@ -345,9 +345,9 @@ export default function Nodes() {
           {protocol === 'vmess' && (
             <>
               <Row gutter={[16, 0]}>
-                <Col span={24}><Form.Item name={['config', 'uuid']} label="UUID" extra="留空自动生成"><Input placeholder="留空自动生成" /></Form.Item></Col>
-                <Col xs={12} sm={12}><Form.Item name={['config', 'alterId']} label="AlterId" initialValue={0}><InputNumber min={0} max={65535} style={{ width: '100%' }} /></Form.Item></Col>
+                <Col xs={12} sm={12}><Form.Item name={['config', 'uuid']} label="UUID" extra="留空自动生成"><Input placeholder="留空自动生成" /></Form.Item></Col>
                 <Col xs={12} sm={12}><Form.Item name={['config', 'encryption']} label="加密" initialValue="auto"><Select options={[{ value: 'auto', label: 'Auto' }, { value: 'aes-128-gcm', label: 'AES-128-GCM' }, { value: 'chacha20-poly1305', label: 'ChaCha20-Poly1305' }, { value: 'none', label: 'None' }, { value: 'zero', label: 'Zero' }]} /></Form.Item></Col>
+                <Col xs={12} sm={12}><Form.Item name={['config', 'alterId']} label="AlterId" initialValue={0}><InputNumber min={0} max={65535} style={{ width: '100%' }} /></Form.Item></Col>
                 <Col xs={12} sm={12}><Form.Item name={['config', 'transport']} label="传输协议" initialValue="tcp"><Select options={transportOptions} onChange={(v) => setTransport(v)} /></Form.Item></Col>
                 <Col xs={12} sm={12}><Form.Item name={['config', 'tls']} label="TLS" initialValue="none"><Select options={[{ value: 'none', label: '无' }, { value: 'tls', label: 'TLS' }]} onChange={(v) => setTlsType(v)} /></Form.Item></Col>
               </Row>
@@ -372,7 +372,7 @@ export default function Nodes() {
           {protocol === 'vless' && (
             <>
               <Row gutter={[16, 0]}>
-                <Col span={24}><Form.Item name={['config', 'uuid']} label="UUID" extra="留空自动生成"><Input placeholder="留空自动生成" /></Form.Item></Col>
+                <Col xs={12} sm={12}><Form.Item name={['config', 'uuid']} label="UUID" extra="留空自动生成"><Input placeholder="留空自动生成" /></Form.Item></Col>
                 <Col xs={12} sm={12}><Form.Item name={['config', 'flow']} label="Flow" initialValue="none"><Select options={[{ value: 'none', label: 'None' }, { value: 'xtls-rprx-vision', label: 'xtls-rprx-vision' }, { value: 'xtls-rprx-vision-udp443', label: 'xtls-rprx-vision-udp443' }]} /></Form.Item></Col>
                 <Col xs={12} sm={12}><Form.Item name={['config', 'transport']} label="传输协议" initialValue="tcp"><Select options={transportOptions} onChange={(v) => setTransport(v)} /></Form.Item></Col>
                 <Col xs={12} sm={12}><Form.Item name={['config', 'tls']} label="安全" initialValue="none"><Select options={tlsOptions} onChange={(v) => setTlsType(v)} /></Form.Item></Col>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Space, Tag, Modal, Form, Input, InputNumber, Select, Switch, message, Spin, Popconfirm, Row, Col } from 'antd';
+import { Table, Button, Space, Tag, Modal, Form, Input, InputNumber, Select, message, Spin, Popconfirm, Row, Col } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { api } from '../api/client';
 
@@ -248,19 +248,19 @@ export default function AdminPackages() {
                 <InputNumber min={-1} style={{ width: '100%' }} />
               </Form.Item>
             </Col>
-            <Col xs={8} sm={8}>
-              <Form.Item name="enabled" label="启用" valuePropName="checked">
-                <Switch checkedChildren="启用" unCheckedChildren="禁用" />
+            <Col xs={12} sm={8}>
+              <Form.Item name="enabled" label="启用">
+                <Select options={[{ value: 1, label: '启用' }, { value: 0, label: '禁用' }]} />
               </Form.Item>
             </Col>
-            <Col xs={8} sm={8}>
-              <Form.Item name="shopVisible" label="商城可见" valuePropName="checked">
-                <Switch checkedChildren="可见" unCheckedChildren="隐藏" />
+            <Col xs={12} sm={8}>
+              <Form.Item name="shopVisible" label="商城可见">
+                <Select options={[{ value: 1, label: '可见' }, { value: 0, label: '隐藏' }]} />
               </Form.Item>
             </Col>
-            <Col xs={8} sm={8}>
-              <Form.Item name="recommended" label="推荐" valuePropName="checked">
-                <Switch checkedChildren="是" unCheckedChildren="否" />
+            <Col xs={12} sm={8}>
+              <Form.Item name="recommended" label="推荐">
+                <Select options={[{ value: 1, label: '是' }, { value: 0, label: '否' }]} />
               </Form.Item>
             </Col>
           </Row>
