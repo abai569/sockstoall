@@ -1,5 +1,5 @@
 import { Layout, Menu, Button, Dropdown, theme, Drawer, Modal, Form, Input, message } from 'antd';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   DashboardOutlined, 
   NodeIndexOutlined, 
@@ -14,10 +14,8 @@ import {
   ShoppingCartOutlined,
   OrderedListOutlined,
   ShopOutlined,
-  TagsOutlined,
   TeamOutlined,
   CloudServerOutlined,
-  PayCircleOutlined,
 } from '@ant-design/icons';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -28,26 +26,51 @@ declare const __APP_VERSION__: string;
 const { Header, Sider, Content } = Layout;
 const { Password } = Input;
 
-const menuItems = [
-  { key: '/', icon: <DashboardOutlined />, label: '总览' },
-  { key: '/nodes', icon: <NodeIndexOutlined />, label: '节点管理' },
-  { key: '/routes', icon: <SwapOutlined />, label: '转发规则' },
-  { key: '/shop', icon: <ShoppingCartOutlined />, label: '商城' },
-  { key: '/orders', icon: <OrderedListOutlined />, label: '我的订单' },
-  { key: '/logs', icon: <FileTextOutlined />, label: '实时日志' },
-  { key: '/admin/users', icon: <TeamOutlined />, label: '用户管理' },
-  { key: '/admin/servers', icon: <CloudServerOutlined />, label: '服务器管理' },
-  { key: '/admin/payment', icon: <PayCircleOutlined />, label: '支付配置' },
-  { key: '/admin/packages', icon: <ShopOutlined />, label: '套餐管理' },
-  { key: '/admin/package-groups', icon: <TagsOutlined />, label: '套餐分组' },
-  { key: '/admin/orders', icon: <OrderedListOutlined />, label: '订单管理' },
-  { key: '/settings', icon: <SettingOutlined />, label: '设置' },
-];
+function buildMenuItems(isAdmin: boolean) {
+  const items: any[] = [
+    { key: '/', icon: <DashboardOutlined />, label: '总览' },
+    {
+      type: 'group',
+      label: '代理',
+      children: [
+        { key: '/nodes', icon: <NodeIndexOutlined />, label: '节点管理' },
+        { key: '/routes', icon: <SwapOutlined />, label: '转发规则' },
+        { key: '/logs', icon: <FileTextOutlined />, label: '实时日志' },
+      ],
+    },
+    {
+      type: 'group',
+      label: '用户',
+      children: [
+        { key: '/shop', icon: <ShoppingCartOutlined />, label: '商城' },
+        { key: '/orders', icon: <OrderedListOutlined />, label: '我的订单' },
+      ],
+    },
+  ];
+
+  if (isAdmin) {
+    items.push({
+      key: 'admin',
+      icon: <SettingOutlined />,
+      label: '管理',
+      children: [
+        { key: '/admin/users', icon: <TeamOutlined />, label: '用户管理' },
+        { key: '/admin/servers', icon: <CloudServerOutlined />, label: '服务器管理' },
+        { key: '/admin/packages', icon: <ShopOutlined />, label: '套餐管理' },
+        { key: '/admin/orders', icon: <OrderedListOutlined />, label: '订单与支付' },
+      ],
+    });
+  }
+
+  items.push({ key: '/settings', icon: <SettingOutlined />, label: '设置' });
+  return items;
+}
 
 export default function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { username, login, logout } = useAuth();
+  const { username, isAdmin, login, logout } = useAuth();
+  const menuItems = useMemo(() => buildMenuItems(isAdmin), [isAdmin]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [changePwdOpen, setChangePwdOpen] = useState(false);
   const [changePwdLoading, setChangePwdLoading] = useState(false);
@@ -136,9 +159,7 @@ export default function MainLayout() {
     if (path.startsWith('/orders')) return '/orders';
     if (path.startsWith('/admin/users')) return '/admin/users';
     if (path.startsWith('/admin/servers')) return '/admin/servers';
-    if (path.startsWith('/admin/payment')) return '/admin/payment';
     if (path.startsWith('/admin/packages')) return '/admin/packages';
-    if (path.startsWith('/admin/package-groups')) return '/admin/package-groups';
     if (path.startsWith('/admin/orders')) return '/admin/orders';
     if (path.startsWith('/logs')) return '/logs';
     if (path.startsWith('/settings')) return '/settings';
@@ -162,6 +183,7 @@ export default function MainLayout() {
         <Menu
           mode="inline"
           selectedKeys={[getSelectedKey()]}
+          defaultOpenKeys={isAdmin ? ['admin'] : []}
           items={menuItems}
           onClick={handleMenuClick}
         />
@@ -200,7 +222,7 @@ export default function MainLayout() {
         </Content>
       </Layout>
       <Drawer title={siteTitle} placement="left" open={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} width={200} closable={false} styles={{ body: { padding: 0 } }}>
-        <Menu mode="inline" selectedKeys={[getSelectedKey()]} items={menuItems} onClick={handleMenuClick} />
+        <Menu mode="inline" selectedKeys={[getSelectedKey()]} defaultOpenKeys={isAdmin ? ['admin'] : []} items={menuItems} onClick={handleMenuClick} />
       </Drawer>
 
       <Modal

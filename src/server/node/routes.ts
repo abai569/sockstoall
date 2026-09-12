@@ -119,16 +119,16 @@ function fillRealityConfig(config: any): void {
   }
 }
 
-// 重新加载 Xray 配置（只包含启用的节点和规则）
+// 重新加载 Xray 配置（只包含本机启用的节点和规则）
 function reloadXray() {
   setTimeout(() => {
     try {
-      const nodes = getNodes().filter(n => n.enabled);
+      const nodes = getNodes().filter(n => n.enabled && (n.serverId ?? 1) === 1);
       const routes = getRoutes().filter(r => r.enabled);
       const routeDetails = routes
         .map(r => {
           const node = getNodeById(r.nodeId);
-          return node ? { routeId: r.id, node, outbound: r.outbound } : null;
+          return node && (node.serverId ?? 1) === 1 ? { routeId: r.id, node, outbound: r.outbound } : null;
         })
         .filter(Boolean) as any[];
       xrayService.setNodesAndRoutes(nodes, routeDetails);
@@ -139,9 +139,14 @@ function reloadXray() {
   }, 0);
 }
 
-// 获取所有节点
+// 获取所有节点（可按服务器过滤）
 nodeRoutes.get('/', (c) => {
-  const nodes = getNodes();
+  const serverIdParam = c.req.query('serverId');
+  let nodes = getNodes();
+  if (serverIdParam) {
+    const serverId = parseInt(serverIdParam);
+    nodes = nodes.filter(n => (n.serverId ?? 1) === serverId);
+  }
   const nodesWithLinks = nodes.map(node => ({
     ...node,
     listen: resolveListenAddress(node.listen),
@@ -189,7 +194,7 @@ nodeRoutes.post('/', async (c) => {
       return c.json<ApiResponse>({ success: false, error: 'Reality 密钥生成失败，请确认 Xray 已安装' }, 400);
     }
 
-    const node = createNode(body);
+    const node = createNode({ ...body, serverId: body.serverId ?? 1 });
     reloadXray();
     
     return c.json<ApiResponse<any>>({ 

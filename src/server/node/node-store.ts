@@ -24,7 +24,16 @@ export function getNodes(): Node[] {
   }
   
   const content = readFileSync(NODES_FILE, 'utf-8');
-  return JSON.parse(content);
+  const nodes = JSON.parse(content) as Node[];
+  let migrated = false;
+  for (const node of nodes) {
+    if (node.serverId === undefined || node.serverId === null) {
+      node.serverId = 1;
+      migrated = true;
+    }
+  }
+  if (migrated) saveNodes(nodes);
+  return nodes;
 }
 
 export function saveNodes(nodes: Node[]): void {

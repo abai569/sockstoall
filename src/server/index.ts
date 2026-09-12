@@ -21,6 +21,7 @@ import { xrayRoutes } from './xray/routes.js';
 import { shopRoutes } from './shop/index.js';
 import { serverRoutes } from './server/routes.js';
 import { agentRoutes } from './server/agent-routes.js';
+import { agentInstallRoutes } from './server/agent-install-routes.js';
 import { initWebSocket } from './xray/ws-log.js';
 import { xrayService } from './xray/service.js';
 import { getNodes, getNodeById } from './node/node-store.js';
@@ -55,7 +56,6 @@ app.use('/api/shop/orders/*', authMiddleware);
 app.use('/api/shop/balance/*', authMiddleware);
 app.use('/api/shop/admin/*', authMiddleware);
 app.use('/api/server/*', authMiddleware);
-app.use('/api/agent/*', agentRoutes);
 
 app.route('/api/link', linkRoutes);
 app.route('/api/nodes', nodeRoutes);
@@ -63,6 +63,7 @@ app.route('/api/routes', routeRoutes);
 app.route('/api/xray', xrayRoutes);
 app.route('/api/shop', shopRoutes);
 app.route('/api/server', serverRoutes);
+app.route('/api/agent', agentInstallRoutes);
 app.route('/api/agent', agentRoutes);
 
 // 健康检查

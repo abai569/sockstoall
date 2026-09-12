@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { join } from 'path';
 import { existsSync, mkdirSync, readFileSync } from 'fs';
 import bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
 import * as schema from './schema.js';
 
 const DATA_DIR = join(process.cwd(), 'data');
@@ -181,6 +182,7 @@ export function initDatabase() {
       address TEXT NOT NULL,
       agent_token TEXT NOT NULL UNIQUE,
       status TEXT NOT NULL DEFAULT 'offline',
+      is_local INTEGER NOT NULL DEFAULT 0,
       last_heartbeat INTEGER,
       xray_version TEXT,
       os TEXT,
@@ -210,10 +212,34 @@ export function initDatabase() {
   addColumnIfMissing('users', 'status', 'INTEGER NOT NULL DEFAULT 1');
   addColumnIfMissing('users', 'traffic_limit_gb', 'REAL DEFAULT 0');
   addColumnIfMissing('users', 'max_nodes', 'INTEGER DEFAULT 5');
+  addColumnIfMissing('servers', 'is_local', 'INTEGER NOT NULL DEFAULT 0');
 
   seedUsers();
+  seedLocalServer();
 
   console.log('Database initialized successfully');
+}
+
+function seedLocalServer(): void {
+  const local = sqlite.prepare('SELECT id FROM servers WHERE is_local = 1 LIMIT 1').get() as { id: number } | undefined;
+  if (local) {
+    sqlite.prepare("UPDATE servers SET status = 'online', last_heartbeat = ?, updated_at = ? WHERE id = ?")
+      .run(Date.now(), new Date().toISOString(), local.id);
+    return;
+  }
+
+  const now = new Date().toISOString();
+  const existing = sqlite.prepare('SELECT id FROM servers WHERE id = 1').get() as { id: number } | undefined;
+  if (existing) {
+    sqlite.prepare("UPDATE servers SET is_local = 1, name = '本机', status = 'online', last_heartbeat = ?, updated_at = ? WHERE id = 1")
+      .run(Date.now(), now);
+  } else {
+    const token = randomUUID().replace(/-/g, '');
+    sqlite.prepare(
+      "INSERT INTO servers (id, name, address, agent_token, status, is_local, last_heartbeat, created_at, updated_at) VALUES (1, '本机', 'localhost', ?, 'online', 1, ?, ?, ?)"
+    ).run(token, Date.now(), now, now);
+  }
+  console.log('Initialized local server (id=1)');
 }
 
 function seedUsers(): void {

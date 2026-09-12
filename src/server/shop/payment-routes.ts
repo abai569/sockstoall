@@ -24,6 +24,9 @@ paymentRoutes.get('/configs', (c) => {
 
 // 保存支付配置（管理员）
 paymentRoutes.post('/configs', async (c) => {
+  if ((c as any).get('role') !== 'admin') {
+    return c.json({ success: false, error: '需要管理员权限' }, 403);
+  }
   try {
     const body = await c.req.json<{ channel: string; config: string; enabled: number }>();
     const now = new Date().toISOString();
@@ -56,6 +59,9 @@ paymentRoutes.post('/configs', async (c) => {
 
 // 获取所有支付配置（管理员）
 paymentRoutes.get('/admin/configs', (c) => {
+  if ((c as any).get('role') !== 'admin') {
+    return c.json({ success: false, error: '需要管理员权限' }, 403);
+  }
   const configs = db.query.paymentConfigs.findMany({
     orderBy: [paymentConfigs.id],
   }).sync();

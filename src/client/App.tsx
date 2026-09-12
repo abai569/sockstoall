@@ -10,12 +10,10 @@ import Logs from './pages/Logs';
 import Settings from './pages/Settings';
 import Shop from './pages/Shop';
 import Orders from './pages/Orders';
-import AdminPackages from './pages/AdminPackages';
-import AdminOrders from './pages/AdminOrders';
-import AdminPackageGroups from './pages/AdminPackageGroups';
+import AdminPackagesPage from './pages/AdminPackagesPage';
+import AdminOrdersPage from './pages/AdminOrdersPage';
 import AdminUsers from './pages/AdminUsers';
 import AdminServers from './pages/AdminServers';
-import AdminPaymentConfigs from './pages/AdminPaymentConfigs';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
@@ -43,12 +41,10 @@ function App() {
             <Route path="shop" element={<Shop />} />
             <Route path="orders" element={<Orders />} />
             <Route path="logs" element={<Logs />} />
-            <Route path="admin/packages" element={<AdminPackages />} />
-            <Route path="admin/package-groups" element={<AdminPackageGroups />} />
-            <Route path="admin/orders" element={<AdminOrders />} />
+            <Route path="admin/packages" element={<AdminPackagesPage />} />
+            <Route path="admin/orders" element={<AdminOrdersPage />} />
             <Route path="admin/users" element={<AdminUsers />} />
             <Route path="admin/servers" element={<AdminServers />} />
-            <Route path="admin/payment" element={<AdminPaymentConfigs />} />
             <Route path="settings" element={<Settings />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

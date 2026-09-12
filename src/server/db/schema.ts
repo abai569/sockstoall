@@ -156,6 +156,7 @@ export const servers = sqliteTable('servers', {
   address: text('address').notNull(),  // IP 或域名
   agentToken: text('agent_token').notNull().unique(),  // Agent 认证令牌
   status: text('status').notNull().default('offline'),  // online/offline
+  isLocal: integer('is_local').notNull().default(0),  // 1=本机（面板所在机器）
   lastHeartbeat: integer('last_heartbeat'),  // 最后心跳时间戳
   xrayVersion: text('xray_version'),
   os: text('os'),

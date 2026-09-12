@@ -36,6 +36,7 @@ interface BaseNode {
   port: number;
   listen?: string; // 监听地址，默认 0.0.0.0
   enabled: boolean; // 是否启用
+  serverId?: number; // 所属服务器，默认 1（本机）
   remark?: string;
   createdAt: string;
   updatedAt: string;

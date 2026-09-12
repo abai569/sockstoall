@@ -2,9 +2,20 @@ import { Hono } from 'hono';
 import { db } from '../db/index.js';
 import { servers } from '../db/schema.js';
 import { eq } from 'drizzle-orm';
+import { createHash } from 'crypto';
 import type { ApiResponse } from '../../shared/types.js';
+import { getNodes, getNodeById } from '../node/node-store.js';
+import { getRoutes } from '../route/route-store.js';
+import { buildXrayConfig } from '../xray/config-builder.js';
 
 export const agentRoutes = new Hono();
+
+function findServerByToken(token: string) {
+  if (!token) return null;
+  return db.query.servers.findFirst({
+    where: eq(servers.agentToken, token),
+  }).sync() || null;
+}
 
 // Agent 心跳上报
 agentRoutes.post('/heartbeat', async (c) => {
@@ -14,19 +25,12 @@ agentRoutes.post('/heartbeat', async (c) => {
     os?: string;
     arch?: string;
   }>();
-  
-  if (!body.token) {
-    return c.json<ApiResponse>({ success: false, error: '缺少 token' }, 400);
-  }
-  
-  const server = db.query.servers.findFirst({
-    where: eq(servers.agentToken, body.token),
-  }).sync();
-  
+
+  const server = findServerByToken(body.token);
   if (!server) {
     return c.json<ApiResponse>({ success: false, error: '无效的 token' }, 401);
   }
-  
+
   db.update(servers)
     .set({
       status: 'online',
@@ -38,29 +42,30 @@ agentRoutes.post('/heartbeat', async (c) => {
     })
     .where(eq(servers.id, server.id))
     .run();
-  
+
   return c.json<ApiResponse>({ success: true });
 });
 
-// Agent 拉取配置
+// Agent 拉取本服务器的 Xray 配置
 agentRoutes.post('/config', async (c) => {
   const body = await c.req.json<{ token: string }>();
-  
-  if (!body.token) {
-    return c.json<ApiResponse>({ success: false, error: '缺少 token' }, 400);
-  }
-  
-  const server = db.query.servers.findFirst({
-    where: eq(servers.agentToken, body.token),
-  }).sync();
-  
+
+  const server = findServerByToken(body.token);
   if (!server) {
     return c.json<ApiResponse>({ success: false, error: '无效的 token' }, 401);
   }
-  
-  // TODO: 返回该服务器的节点配置
-  return c.json<ApiResponse>({ 
-    success: true, 
-    data: { nodes: [], routes: [] } 
-  });
+
+  const nodes = getNodes().filter(n => n.enabled && (n.serverId ?? 1) === server.id);
+  const routes = getRoutes().filter(r => r.enabled);
+  const routeDetails = routes
+    .map(r => {
+      const node = getNodeById(r.nodeId);
+      return node && (node.serverId ?? 1) === server.id ? { routeId: r.id, node, outbound: r.outbound } : null;
+    })
+    .filter(Boolean) as any[];
+
+  const config = buildXrayConfig(nodes, routeDetails);
+  const version = createHash('sha256').update(JSON.stringify(config)).digest('hex').slice(0, 16);
+
+  return c.json<ApiResponse>({ success: true, data: { version, config } });
 });

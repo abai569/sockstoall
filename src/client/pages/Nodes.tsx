@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Table, Button, Space, Tag, Popconfirm, message, Typography, Modal, Input, Tooltip, QRCode, Switch, Form, Select, InputNumber, Divider, Row, Col } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, LinkOutlined, QrcodeOutlined, CopyOutlined } from '@ant-design/icons';
-import { nodeApi, linkApi } from '../api/client';
+import { nodeApi, linkApi, api } from '../api/client';
 import type { NodeProtocol } from '../../shared/types';
 
 const { Title, Paragraph } = Typography;
@@ -73,13 +73,25 @@ export default function Nodes() {
   const [importing, setImporting] = useState(false);
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [selectedNode, setSelectedNode] = useState<NodeWithLink | null>(null);
+  const [servers, setServers] = useState<any[]>([]);
+  const [filterServerId, setFilterServerId] = useState<number | 'all'>('all');
 
-  useEffect(() => { loadData(); }, []);
+  const serverMap = Object.fromEntries(servers.map(s => [s.id, s.name]));
+
+  useEffect(() => { loadServers(); }, []);
+  useEffect(() => { loadData(); }, [filterServerId]);
+
+  const loadServers = async () => {
+    try {
+      const res = await api.get('/server/servers');
+      setServers(res.data.data || []);
+    } catch { /* ignore */ }
+  };
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const res = await nodeApi.list();
+      const res = await nodeApi.list(filterServerId === 'all' ? undefined : filterServerId);
       setNodes(res.data.data?.items || []);
     } catch (error) { message.error('加载节点失败'); }
     finally { setLoading(false); }
@@ -93,6 +105,7 @@ export default function Nodes() {
     form.resetFields();
     form.setFieldsValue({ 
       protocol: 'vless',
+      serverId: filterServerId === 'all' ? 1 : filterServerId,
       port: generateRandomPort(),
       listen: '0.0.0.0', 
       config: { 
@@ -186,6 +199,10 @@ export default function Nodes() {
 
   const columns = [
     { title: '名称', dataIndex: 'name', key: 'name' },
+    {
+      title: '服务器', key: 'server',
+      render: (_: any, record: NodeWithLink) => serverMap[record.serverId ?? 1] || '本机',
+    },
     { title: '协议', dataIndex: 'protocol', key: 'protocol', render: (p: string) => <Tag color={protocolColors[p]}>{protocolNames[p] || p}</Tag> },
     { title: '入站地址', dataIndex: 'listen', key: 'listen', render: (l: string) => l || '0.0.0.0' },
     { title: '端口', dataIndex: 'port', key: 'port' },
@@ -221,6 +238,12 @@ export default function Nodes() {
       <div className="page-toolbar" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
         <Title level={4} style={{ margin: 0 }}>节点管理</Title>
         <Space>
+          <Select
+            value={filterServerId}
+            style={{ width: 160 }}
+            onChange={(v) => setFilterServerId(v)}
+            options={[{ value: 'all', label: '全部服务器' }, ...servers.map(s => ({ value: s.id, label: s.name }))]}
+          />
           <Button icon={<LinkOutlined />} onClick={() => setImportModalOpen(true)}>导入链接</Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>创建节点</Button>
         </Space>
@@ -264,6 +287,11 @@ export default function Nodes() {
             <Col xs={24} sm={12}>
               <Form.Item name="protocol" label="协议" rules={[{ required: true }]}>
                 <Select options={protocolOptions} onChange={(v) => setProtocol(v)} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={12}>
+              <Form.Item name="serverId" label="所属服务器" rules={[{ required: true }]}>
+                <Select options={servers.map(s => ({ value: s.id, label: s.name }))} />
               </Form.Item>
             </Col>
             <Col xs={24} sm={12}>

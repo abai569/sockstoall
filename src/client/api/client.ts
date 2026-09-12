@@ -38,7 +38,7 @@ export const authApi = {
 };
 
 export const nodeApi = {
-  list: () => api.get('/nodes'),
+  list: (serverId?: number) => api.get('/nodes', { params: serverId ? { serverId } : {} }),
   get: (id: string) => api.get(`/nodes/${id}`),
   create: (data: any) => api.post('/nodes', data),
   update: (id: string, data: any) => api.put(`/nodes/${id}`, data),
