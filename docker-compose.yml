@@ -1,0 +1,19 @@
+services:
+  sockstoall:
+    image: ghcr.io/abai569/sockstoall:${SOCKSTOALL_VERSION:-latest}
+    container_name: sockstoall
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3456
+    ports:
+      - "${SOCKSTOALL_PORT:-3456}:3456"
+    volumes:
+      - ./data:/app/data
+      - sockstoall_bin:/app/bin
+    stop_grace_period: 30s
+    stop_signal: SIGTERM
+
+volumes:
+  sockstoall_bin:
+    name: sockstoall_bin

@@ -14,6 +14,8 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 INSTALL_DIR="/opt/sockstoall"
 REPO="abai569/sockstoall"
+COMPOSE_FILE="/opt/sockstoall/docker-compose.yml"
+DOCKER_COMPOSE_COMMAND=""
 
 if [ "$EUID" -ne 0 ]; then
     log_error "Please run as root"
@@ -34,37 +36,87 @@ install_base_deps() {
     log_info "Installing base dependencies..."
     case $OS in
         ubuntu|debian)
-            apt-get update -y && apt-get install -y curl wget unzip git build-essential python3
+            apt-get update -y && apt-get install -y curl ca-certificates
             ;;
         centos|rhel|fedora|almalinux|rocky)
-            dnf install -y curl wget unzip git gcc-c++ make python3 2>/dev/null || yum install -y curl wget unzip git gcc-c++ make python3
+            dnf install -y curl ca-certificates 2>/dev/null || yum install -y curl ca-certificates
             ;;
         *)
-            apt-get update -y && apt-get install -y curl wget unzip git build-essential python3
+            apt-get update -y && apt-get install -y curl ca-certificates
             ;;
     esac
 }
 
-install_nodejs() {
-    if command -v node &>/dev/null; then
-        local ver=$(node -v | grep -oP '[0-9]+' | head -1)
-        if [ "$ver" -ge 18 ]; then
-            log_info "Node.js $(node -v) already installed"
-            return
-        fi
+ensure_docker() {
+    if ! command -v docker &>/dev/null; then
+        log_info "Docker not found, installing Docker Engine..."
+        case $OS in
+            ubuntu|debian)
+                apt-get update -y
+                apt-get install -y docker.io
+                apt-get install -y docker-compose-plugin 2>/dev/null || apt-get install -y docker-compose-v2 2>/dev/null || apt-get install -y docker-compose
+                ;;
+            centos|rhel|fedora|almalinux|rocky)
+                if command -v dnf &>/dev/null; then
+                    dnf install -y docker
+                    dnf install -y docker-compose-plugin 2>/dev/null || dnf install -y docker-compose
+                else
+                    yum install -y docker
+                    yum install -y docker-compose-plugin 2>/dev/null || yum install -y docker-compose
+                fi
+                ;;
+            *)
+                apt-get update -y
+                apt-get install -y docker.io
+                apt-get install -y docker-compose-plugin 2>/dev/null || apt-get install -y docker-compose-v2 2>/dev/null || apt-get install -y docker-compose
+                ;;
+        esac
+    else
+        log_info "Docker $(docker --version) already installed"
     fi
-    log_info "Installing Node.js 20..."
-    case $OS in
-        ubuntu|debian)
-            curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-            apt-get install -y nodejs
-            ;;
-        *)
-            curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
-            yum install -y nodejs 2>/dev/null || dnf install -y nodejs
-            ;;
-    esac
-    log_info "Node.js $(node -v) installed"
+
+    if docker compose version &>/dev/null; then
+        DOCKER_COMPOSE_COMMAND="docker compose"
+        log_info "Docker Compose plugin is available"
+    elif command -v docker-compose &>/dev/null; then
+        DOCKER_COMPOSE_COMMAND="docker-compose"
+        log_info "Docker Compose legacy command is available"
+    else
+        log_info "Docker Compose not found, installing Compose plugin..."
+        case $OS in
+            ubuntu|debian)
+                apt-get update -y
+                apt-get install -y docker-compose-plugin 2>/dev/null || apt-get install -y docker-compose-v2
+                ;;
+            centos|rhel|fedora|almalinux|rocky)
+                if command -v dnf &>/dev/null; then
+                    dnf install -y docker-compose-plugin 2>/dev/null || dnf install -y docker-compose
+                else
+                    yum install -y docker-compose-plugin 2>/dev/null || yum install -y docker-compose
+                fi
+                ;;
+            *)
+                apt-get update -y
+                apt-get install -y docker-compose-plugin 2>/dev/null || apt-get install -y docker-compose-v2
+                ;;
+        esac
+    fi
+
+    if ! command -v docker &>/dev/null; then
+        log_error "Docker installation failed"
+        exit 1
+    fi
+
+    if docker compose version &>/dev/null; then
+        DOCKER_COMPOSE_COMMAND="docker compose"
+    elif command -v docker-compose &>/dev/null; then
+        DOCKER_COMPOSE_COMMAND="docker-compose"
+    else
+        log_error "Docker Compose installation failed"
+        exit 1
+    fi
+
+    systemctl enable --now docker
 }
 
 get_ipv4() {
@@ -84,88 +136,6 @@ get_ipv4() {
     return 1
 }
 
-install_xray() {
-    local bin_dir="$INSTALL_DIR/bin"
-    mkdir -p "$bin_dir"
-
-    if [ -f "$bin_dir/xray" ]; then
-        log_info "Xray already exists: $($bin_dir/xray version 2>/dev/null | head -1)"
-        return
-    fi
-
-    log_info "Downloading Xray..."
-    local arch
-    case $(uname -m) in
-        x86_64)  arch="64" ;;
-        aarch64) arch="arm64-v8a" ;;
-        armv7l)  arch="arm32-v7a" ;;
-        *)       arch="64" ;;
-    esac
-
-    local url="https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-${arch}.zip"
-    local tmp=$(mktemp -d)
-
-    wget -q -O "$tmp/xray.zip" "$url" || { log_error "Download Xray failed"; exit 1; }
-    unzip -q -o "$tmp/xray.zip" -d "$tmp"
-    mv "$tmp/xray" "$bin_dir/xray"
-    chmod +x "$bin_dir/xray"
-    rm -rf "$tmp"
-
-    log_info "Xray installed: $($bin_dir/xray version 2>/dev/null | head -1)"
-}
-
-download_release() {
-    log_info "Fetching latest release..."
-    local tag
-    tag=$(curl -fsSL --max-time 10 "https://api.github.com/repos/${REPO}/releases/latest" 2>/dev/null | grep '"tag_name"' | head -1 | sed 's/.*: *"//;s/".*//')
-
-    if [ -z "$tag" ]; then
-        log_warn "No release found, will build from source"
-        return 1
-    fi
-
-    local url="https://github.com/${REPO}/releases/download/${tag}/sockstoall-${tag}.tar.gz"
-    log_info "Downloading release ${tag}..."
-
-    local tmp=$(mktemp -d)
-    if ! wget -q -O "$tmp/sockstoall.tar.gz" "$url"; then
-        log_warn "Release download failed, will build from source"
-        rm -rf "$tmp"
-        return 1
-    fi
-
-    log_info "Extracting release..."
-    mkdir -p "$INSTALL_DIR"
-    tar -xzf "$tmp/sockstoall.tar.gz" -C "$INSTALL_DIR"
-    rm -rf "$tmp"
-
-    log_info "Installing native dependencies..."
-    cd "$INSTALL_DIR"
-    npm install --omit=dev --build-from-source=better-sqlite3
-
-    log_info "Release ${tag} installed"
-    return 0
-}
-
-build_from_source() {
-    log_info "Building from source (this may take a few minutes)..."
-
-    if [ -d "$INSTALL_DIR/.git" ]; then
-        cd "$INSTALL_DIR"
-        git pull
-    else
-        rm -rf "$INSTALL_DIR"
-        git clone "https://github.com/${REPO}.git" "$INSTALL_DIR"
-        cd "$INSTALL_DIR"
-    fi
-
-    npm config unset production 2>/dev/null || true
-    npm install --include=dev
-
-    export NODE_OPTIONS="--max-old-space-size=1024"
-    npm run build:release
-}
-
 init_data() {
     local data_dir="$INSTALL_DIR/data"
     mkdir -p "$data_dir"
@@ -174,17 +144,30 @@ init_data() {
     log_info "Data directory initialized"
 }
 
+setup_compose() {
+    mkdir -p "$INSTALL_DIR/data"
+    curl -fsSL "https://raw.githubusercontent.com/${REPO}/master/docker-compose.yml" -o "$COMPOSE_FILE"
+}
+
 setup_systemd() {
-    cat > /etc/systemd/system/sockstoall.service << 'EOF'
+    local compose_executable
+    if [ "$DOCKER_COMPOSE_COMMAND" = "docker-compose" ]; then
+        compose_executable="/usr/bin/docker-compose"
+        if [ ! -x "$compose_executable" ]; then
+            compose_executable="$(command -v docker-compose)"
+        fi
+        cat > /etc/systemd/system/sockstoall.service << EOF
 [Unit]
 Description=SocksToAll Proxy Manager
-After=network.target
+After=network.target docker.service
+Requires=docker.service
 
 [Service]
 Type=simple
 User=root
 WorkingDirectory=/opt/sockstoall
-ExecStart=/usr/bin/node /opt/sockstoall/dist/server.mjs
+ExecStart=$compose_executable -f /opt/sockstoall/docker-compose.yml up
+ExecStop=$compose_executable -f /opt/sockstoall/docker-compose.yml down
 Restart=always
 RestartSec=10
 Environment=NODE_ENV=production
@@ -193,13 +176,38 @@ Environment=PORT=3456
 [Install]
 WantedBy=multi-user.target
 EOF
+    else
+        compose_executable="/usr/bin/docker"
+        cat > /etc/systemd/system/sockstoall.service << EOF
+[Unit]
+Description=SocksToAll Proxy Manager
+After=network.target docker.service
+Requires=docker.service
 
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/sockstoall
+ExecStart=$compose_executable compose -f /opt/sockstoall/docker-compose.yml up
+ExecStop=$compose_executable compose -f /opt/sockstoall/docker-compose.yml down
+Restart=always
+RestartSec=10
+Environment=NODE_ENV=production
+Environment=PORT=3456
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    fi
     systemctl daemon-reload
     systemctl enable sockstoall
 }
 
 start_service() {
     log_info "Starting service..."
+    cd "$INSTALL_DIR"
+    $DOCKER_COMPOSE_COMMAND -f "$COMPOSE_FILE" pull
+    $DOCKER_COMPOSE_COMMAND -f "$COMPOSE_FILE" up -d
     systemctl restart sockstoall
     sleep 2
     systemctl status sockstoall --no-pager
@@ -215,14 +223,9 @@ main() {
 
     detect_os
     install_base_deps
-    install_nodejs
-
-    if ! download_release; then
-        build_from_source
-    fi
-
-    install_xray
+    ensure_docker
     init_data
+    setup_compose
     setup_systemd
     start_service
 
