@@ -72,11 +72,6 @@ export default function Login() {
           </Form.Item>
         </Form>
         
-        <div style={{ textAlign: 'center' }}>
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            默认账号：admin / admin123
-          </Text>
-        </div>
         <div style={{ textAlign: 'center', marginTop: 16 }}>
           <Link to="/register">没有账号？去注册</Link>
         </div>

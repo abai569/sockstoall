@@ -103,6 +103,7 @@ export interface VLESSNode extends BaseNode {
       publicKey?: string; // 客户端分享链接需要
       shortId: string;
       spiderX?: string;
+      fingerprint?: string; // uTLS 指纹，客户端分享链接使用
     };
     // WebSocket 配置
     wsSettings?: {

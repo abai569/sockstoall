@@ -380,24 +380,43 @@ export default function Nodes() {
                   <div style={{ background: '#e6f7ff', padding: '8px 12px', borderRadius: 4, marginBottom: 16, fontSize: 12 }}>
                     💡 Reality 配置说明：只需填写目标地址和域名，密钥和 Short ID 自动生成
                   </div>
-                  <Form.Item 
-                    name={['config', 'realitySettings', 'dest']} 
-                    label="目标地址 (dest)" 
-                    rules={[{ required: true, message: '请输入目标地址' }]}
-                    extra="例如：tesla.com:443"
-                    initialValue="tesla.com:443"
-                  >
-                    <Input placeholder="tesla.com:443" />
-                  </Form.Item>
-                  <Form.Item 
-                    name={['config', 'realitySettings', 'serverNames']} 
-                    label="Server Names" 
-                    rules={[{ required: true, message: '请输入 Server Names' }]}
-                    extra="多个用逗号分隔，例如：tesla.com,www.tesla.com"
-                    initialValue="tesla.com"
-                  >
-                    <Input placeholder="tesla.com,www.tesla.com" />
-                  </Form.Item>
+                  <Row gutter={[16, 0]}>
+                    <Col xs={12} sm={8}>
+                      <Form.Item
+                        name={['config', 'realitySettings', 'dest']}
+                        label="Dest"
+                        rules={[{ required: true, message: '请输入 Dest' }]}
+                        initialValue="tesla.com:443"
+                      >
+                        <Input placeholder="tesla.com:443" />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={12} sm={8}>
+                      <Form.Item
+                        name={['config', 'realitySettings', 'serverNames']}
+                        label="SNI"
+                        rules={[{ required: true, message: '请输入 SNI' }]}
+                        initialValue="tesla.com"
+                      >
+                        <Input placeholder="tesla.com,www.tesla.com" />
+                      </Form.Item>
+                    </Col>
+                    <Col xs={12} sm={8}>
+                      <Form.Item name={['config', 'realitySettings', 'fingerprint']} label="uTLS" initialValue="chrome">
+                        <Select options={[
+                          { value: 'chrome', label: 'chrome' },
+                          { value: 'firefox', label: 'firefox' },
+                          { value: 'safari', label: 'safari' },
+                          { value: 'ios', label: 'ios' },
+                          { value: 'android', label: 'android' },
+                          { value: 'edge', label: 'edge' },
+                          { value: '360', label: '360' },
+                          { value: 'random', label: 'random' },
+                          { value: 'randomized', label: 'randomized' },
+                        ]} />
+                      </Form.Item>
+                    </Col>
+                  </Row>
                   {/* 以下字段自动生成，编辑时显示 */}
                   {editId && (
                     <>

@@ -98,6 +98,9 @@ export function generateVLESSLink(node: Node): string {
       params.set('sni', reality.serverNames[0]);
     }
     params.set('pbk', reality.publicKey);
+    if (reality.fingerprint) {
+      params.set('fp', reality.fingerprint);
+    }
     if (reality.shortId) {
       params.set('sid', reality.shortId);
     }
